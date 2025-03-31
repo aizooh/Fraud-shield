@@ -10,7 +10,6 @@ import { ChartData } from "@/types";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
-  const stats = useSelector((state: RootState) => state.app.stats);
   
   const { data: statsData, isLoading } = useQuery({
     queryKey: ['/api/stats'],
@@ -22,20 +21,28 @@ export default function Dashboard() {
     }
   }, [statsData, dispatch]);
   
+  // Use local stats from query for safety
+  const stats = useSelector((state: RootState) => state.app?.stats) || statsData || {
+    totalTransactions: 0,
+    fraudDetected: 0,
+    suspiciousTransactions: 0,
+    detectionAccuracy: 0
+  };
+  
   // Chart data for fraud detection trends
   const fraudTrendsData: ChartData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
     datasets: [
       {
         label: 'Fraud Detected',
-        data: [12, 19, 15, 25, 22, stats?.fraudDetected || 0],
+        data: [12, 19, 15, 25, 22, stats.fraudDetected || 0],
         backgroundColor: 'rgba(220, 38, 38, 0.5)',
         borderColor: 'rgba(220, 38, 38, 1)',
         borderWidth: 1,
       },
       {
         label: 'Suspicious Transactions',
-        data: [32, 29, 40, 45, 52, stats?.suspiciousTransactions || 0],
+        data: [32, 29, 40, 45, 52, stats.suspiciousTransactions || 0],
         backgroundColor: 'rgba(245, 158, 11, 0.5)',
         borderColor: 'rgba(245, 158, 11, 1)',
         borderWidth: 1,

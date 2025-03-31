@@ -39,6 +39,13 @@ export interface DashboardStats {
   detectionAccuracy: number;
 }
 
+export interface FraudStats {
+  totalTransactions: number;
+  fraudDetected: number;
+  suspiciousTransactions: number;
+  detectionAccuracy: number;
+}
+
 export interface TransactionWithFraudResult {
   transaction: Transaction;
   fraudResult: FraudDetectionResult;

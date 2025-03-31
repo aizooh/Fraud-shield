@@ -1,13 +1,94 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { modelService } from "./modelService";
 import { z } from "zod";
-import { fraudDetectionRequestSchema, insertTransactionSchema } from "@shared/schema";
+import { fraudDetectionRequestSchema, insertTransactionSchema, insertUserSchema } from "@shared/schema";
 import { nanoid } from "nanoid";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes - prefix all with /api
+
+  // Authentication endpoints
+  app.post("/api/register", async (req, res) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(validatedData.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      // Create user
+      const user = await storage.createUser(validatedData);
+      
+      // Don't send the password back
+      const { password, ...userWithoutPassword } = user;
+      
+      res.status(201).json({ user: userWithoutPassword });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid input data", 
+          errors: error.errors 
+        });
+      }
+      
+      res.status(500).json({ message: "Failed to register user" });
+    }
+  });
+  
+  app.post("/api/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      
+      // Find user
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+      
+      // Check password
+      if (user.password !== password) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+      
+      // Don't send the password back
+      const { password: _, ...userWithoutPassword } = user;
+      
+      res.json({ user: userWithoutPassword });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to login" });
+    }
+  });
+  
+  app.post("/api/logout", (req, res) => {
+    // In a real app with sessions, we would destroy the session here
+    res.status(200).json({ message: "Logged out successfully" });
+  });
+  
+  app.get("/api/user", async (req, res) => {
+    // This would normally check for a session or JWT token
+    // For now, we'll just return the admin user
+    try {
+      const user = await storage.getUserByUsername("admin");
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't send the password back
+      const { password, ...userWithoutPassword } = user;
+      
+      res.json({ user: userWithoutPassword });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user" });
+    }
+  });
   
   // Get all transactions
   app.get("/api/transactions", async (req, res) => {
