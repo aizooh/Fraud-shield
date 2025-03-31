@@ -33,8 +33,8 @@ export default function MobileSidebar() {
         <div className="md:hidden absolute z-10 top-16 left-0 right-0 bg-neutral-dark">
           <nav className="px-2 pt-2 pb-3 space-y-1">
             <Link href="/">
-              <a 
-                className={`flex items-center px-3 py-2 text-base font-medium rounded-md ${
+              <div 
+                className={`flex items-center px-3 py-2 text-base font-medium rounded-md cursor-pointer ${
                   isActive("/") 
                     ? "text-white bg-gray-700" 
                     : "text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -43,11 +43,11 @@ export default function MobileSidebar() {
               >
                 <span className="material-icons mr-3 text-lg">dashboard</span>
                 Dashboard
-              </a>
+              </div>
             </Link>
             <Link href="/fraud-detection">
-              <a 
-                className={`flex items-center px-3 py-2 text-base font-medium rounded-md ${
+              <div 
+                className={`flex items-center px-3 py-2 text-base font-medium rounded-md cursor-pointer ${
                   isActive("/fraud-detection") 
                     ? "text-white bg-gray-700" 
                     : "text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -56,11 +56,11 @@ export default function MobileSidebar() {
               >
                 <span className="material-icons mr-3 text-lg">search</span>
                 Fraud Detection
-              </a>
+              </div>
             </Link>
             <Link href="/transactions">
-              <a 
-                className={`flex items-center px-3 py-2 text-base font-medium rounded-md ${
+              <div 
+                className={`flex items-center px-3 py-2 text-base font-medium rounded-md cursor-pointer ${
                   isActive("/transactions") 
                     ? "text-white bg-gray-700" 
                     : "text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -69,7 +69,7 @@ export default function MobileSidebar() {
               >
                 <span className="material-icons mr-3 text-lg">history</span>
                 Transaction History
-              </a>
+              </div>
             </Link>
             <a className="flex items-center px-3 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
               <span className="material-icons mr-3 text-lg">bar_chart</span>

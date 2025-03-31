@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 export default function TransactionHistory() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   
   // Fetch transactions
   const { data: transactionsData, isLoading } = useQuery<{ transactions: Transaction[] }>({
@@ -24,7 +24,7 @@ export default function TransactionHistory() {
       transaction.transactionId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       transaction.merchantName.toLowerCase().includes(searchTerm.toLowerCase());
       
-    const matchesStatus = statusFilter === "" || transaction.status === statusFilter;
+    const matchesStatus = statusFilter === "" || statusFilter === "all" || transaction.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -62,7 +62,7 @@ export default function TransactionHistory() {
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Statuses</SelectItem>
+                      <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="safe">Safe</SelectItem>
                       <SelectItem value="suspicious">Suspicious</SelectItem>
                       <SelectItem value="fraudulent">Fraudulent</SelectItem>
@@ -74,7 +74,7 @@ export default function TransactionHistory() {
                     variant="outline"
                     onClick={() => {
                       setSearchTerm("");
-                      setStatusFilter("");
+                      setStatusFilter("all");
                     }}
                   >
                     Reset

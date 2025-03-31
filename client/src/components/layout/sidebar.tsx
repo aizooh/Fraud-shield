@@ -23,34 +23,34 @@ export default function Sidebar() {
         <div className="flex-1 flex flex-col overflow-y-auto">
           <nav className="flex-1 px-2 py-4 space-y-1">
             <Link href="/">
-              <a className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+              <div className={`flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ${
                 isActive("/") 
                   ? "text-white bg-gray-700" 
                   : "text-gray-300 hover:bg-gray-700 hover:text-white"
               }`}>
                 <span className="material-icons mr-3 text-lg">dashboard</span>
                 Dashboard
-              </a>
+              </div>
             </Link>
             <Link href="/fraud-detection">
-              <a className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+              <div className={`flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ${
                 isActive("/fraud-detection") 
                   ? "text-white bg-gray-700" 
                   : "text-gray-300 hover:bg-gray-700 hover:text-white"
               }`}>
                 <span className="material-icons mr-3 text-lg">search</span>
                 Fraud Detection
-              </a>
+              </div>
             </Link>
             <Link href="/transactions">
-              <a className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+              <div className={`flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ${
                 isActive("/transactions") 
                   ? "text-white bg-gray-700" 
                   : "text-gray-300 hover:bg-gray-700 hover:text-white"
               }`}>
                 <span className="material-icons mr-3 text-lg">history</span>
                 Transaction History
-              </a>
+              </div>
             </Link>
             <a className="flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
               <span className="material-icons mr-3 text-lg">bar_chart</span>
