@@ -6,11 +6,23 @@ import { z } from "zod";
 import { fraudDetectionRequestSchema, insertTransactionSchema } from "@shared/schema";
 import { setupAuth } from "./auth";
 
+import multer from 'multer';
+import * as csv from 'csv-parse';
+import { Readable } from 'stream';
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes - prefix all with /api
 
   // Set up authentication (login, register, session handling)
   setupAuth(app);
+  
+  // Configure multer for file uploads
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+  });
   
   // Health check endpoint for monitoring
   app.get("/api/health", async (req, res) => {
@@ -169,6 +181,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ data });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch analytics data" });
+    }
+  });
+
+  // CSV Upload and analysis
+  app.post("/api/analyze-csv", upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const fileBuffer = req.file.buffer;
+      const fileContent = fileBuffer.toString();
+      
+      // Parse CSV
+      const records: any[] = [];
+      const parser = csv.parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true
+      });
+      
+      const stream = Readable.from(fileContent);
+      stream.pipe(parser);
+      
+      for await (const record of parser) {
+        records.push(record);
+      }
+      
+      if (records.length === 0) {
+        return res.status(400).json({ message: "CSV file has no valid records" });
+      }
+
+      // Validate required columns
+      const requiredColumns = ['amount', 'merchantCategory', 'cardEntryMethod'];
+      const firstRecord = records[0];
+      const missingColumns = requiredColumns.filter(col => !(col in firstRecord));
+      
+      if (missingColumns.length > 0) {
+        return res.status(400).json({ 
+          message: `CSV file is missing required columns: ${missingColumns.join(', ')}` 
+        });
+      }
+
+      // Process each transaction
+      const fraudResults = await Promise.all(
+        records.map(async record => {
+          try {
+            // Convert amount to number
+            const amount = parseFloat(record.amount);
+            if (isNaN(amount)) {
+              return { error: 'Invalid amount', record };
+            }
+
+            const request = {
+              amount,
+              merchantName: record.merchantName || 'Unknown',
+              merchantCategory: record.merchantCategory,
+              location: record.location || '',
+              ipAddress: record.ipAddress || '',
+              cardEntryMethod: record.cardEntryMethod,
+              timestamp: record.timestamp ? new Date(record.timestamp) : new Date()
+            };
+
+            // Call model service for prediction
+            const fraudResult = await modelService.detectFraud({
+              amount: request.amount,
+              merchantCategory: request.merchantCategory,
+              cardEntryMethod: request.cardEntryMethod,
+              location: request.location,
+              ipAddress: request.ipAddress
+            });
+
+            return {
+              transaction: request,
+              result: fraudResult,
+              isFraud: fraudResult.is_fraud,
+              confidence: fraudResult.confidence,
+              riskLevel: fraudResult.risk_level,
+              status: fraudResult.is_fraud ? "fraudulent" : 
+                     (fraudResult.confidence > 0.5 ? "suspicious" : "safe")
+            };
+          } catch (error) {
+            return { error: error instanceof Error ? error.message : 'Unknown error', record };
+          }
+        })
+      );
+
+      // Filter out errors
+      const validResults = fraudResults.filter(result => !result.error);
+      const errorResults = fraudResults.filter(result => result.error);
+
+      // Calculate statistics
+      const totalTransactions = validResults.length;
+      const fraudulentTransactions = validResults.filter(r => r.isFraud).length;
+      const suspiciousTransactions = validResults.filter(r => !r.isFraud && r.confidence !== undefined && r.confidence > 0.5).length;
+      const safeTransactions = validResults.filter(r => !r.isFraud && r.confidence !== undefined && r.confidence <= 0.5).length;
+
+      // Group by merchant category
+      const fraudByMerchantCategory = Object.entries(
+        validResults.reduce((acc: Record<string, number>, result) => {
+          if (result.isFraud) {
+            const category = result.transaction.merchantCategory || 'Unknown';
+            acc[category] = (acc[category] || 0) + 1;
+          }
+          return acc;
+        }, {})
+      ).map(([name, value]) => ({ name, value }));
+
+      // Group by card entry method
+      const fraudByCardEntryMethod = Object.entries(
+        validResults.reduce((acc: Record<string, number>, result) => {
+          if (result.isFraud) {
+            const method = result.transaction.cardEntryMethod || 'Unknown';
+            acc[method] = (acc[method] || 0) + 1;
+          }
+          return acc;
+        }, {})
+      ).map(([name, value]) => ({ name, value }));
+
+      // Group by amount ranges
+      const amountRanges = [
+        { min: 0, max: 100, name: '$0-$100' },
+        { min: 100, max: 500, name: '$100-$500' },
+        { min: 500, max: 1000, name: '$500-$1000' },
+        { min: 1000, max: 5000, name: '$1000-$5000' },
+        { min: 5000, max: Infinity, name: '$5000+' }
+      ];
+
+      const amountDistribution = amountRanges.map(range => {
+        const transactionsInRange = validResults.filter(
+          r => r.transaction && r.transaction.amount >= range.min && r.transaction.amount < range.max
+        );
+        
+        return {
+          name: range.name,
+          fraudulent: transactionsInRange.filter(r => r.isFraud).length,
+          legitimate: transactionsInRange.filter(r => !r.isFraud).length
+        };
+      });
+
+      // Send analysis results
+      res.json({
+        totalTransactions,
+        fraudulentTransactions,
+        suspiciousTransactions,
+        safeTransactions,
+        fraudByMerchantCategory,
+        fraudByCardEntryMethod,
+        amountDistribution,
+        errorCount: errorResults.length,
+        // Add the first 100 results for detail view if needed
+        sampleResults: validResults.slice(0, 100)
+      });
+
+    } catch (error) {
+      console.error('CSV analysis error:', error);
+      res.status(500).json({ 
+        message: "Failed to analyze CSV file", 
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
