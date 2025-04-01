@@ -90,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Fraud detection endpoint
+  // Fraud detection endpoint (creates a transaction)
   app.post("/api/detect-fraud", async (req, res) => {
     try {
       // Validate request
@@ -139,6 +139,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(500).json({ 
         message: "Failed to process fraud detection", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+  
+  // Fraud prediction only - doesn't store transactions (for testing/API clients)
+  app.post("/api/fraud/predict", async (req, res) => {
+    try {
+      // Validate request
+      const validatedData = fraudDetectionRequestSchema.parse(req.body);
+      
+      // Call model service
+      const fraudResult = await modelService.detectFraud(validatedData);
+      
+      // Return the fraud detection result only
+      res.json({
+        prediction: {
+          is_fraud: fraudResult.is_fraud,
+          confidence: fraudResult.confidence,
+          risk_level: fraudResult.risk_level,
+        },
+        transaction: {
+          amount: validatedData.amount,
+          merchantCategory: validatedData.merchantCategory,
+          location: validatedData.location || "",
+          ipAddress: validatedData.ipAddress || "",
+          cardEntryMethod: validatedData.cardEntryMethod,
+          timestamp: validatedData.timestamp || new Date().toISOString(),
+        }
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid input data", 
+          errors: error.errors 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to process fraud prediction", 
         error: error instanceof Error ? error.message : "Unknown error" 
       });
     }

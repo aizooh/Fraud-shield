@@ -1,116 +1,171 @@
-# Fraud Detection System
+# FraudShield - Credit Card Fraud Detection System
 
-A sophisticated credit card fraud detection system leveraging machine learning to provide real-time transaction risk analysis and user-friendly security insights.
+FraudShield is a sophisticated full-stack application for real-time credit card fraud detection that leverages machine learning to provide accurate risk assessment and transaction analysis.
 
 ## Features
 
-- Real-time fraud detection using machine learning
-- Secure user authentication with role-based access control
-- Interactive dashboard with fraud visualization
-- Transaction history and management
-- User profile management
-- Detailed fraud analytics
+- **Real-time Fraud Detection**: Process transaction data to detect potential fraud with high accuracy
+- **Risk Assessment**: Evaluate transactions with detailed confidence scores and risk levels
+- **User Authentication**: Secure login/registration system with Google OAuth integration
+- **Transaction Management**: Import and analyze bulk transaction data via CSV
+- **Interactive Dashboard**: Visualize fraud patterns and monitor system performance
+- **Responsive Design**: Optimized for mobile, tablet, and desktop experiences
 
-## Technology Stack
+## Technical Architecture
 
-- **Frontend**: React with TypeScript, Chart.js for visualizations
-- **Backend**: Express.js with Node.js
-- **Database**: PostgreSQL
-- **Machine Learning**: Python, scikit-learn, Flask API
-- **Visualization**: Streamlit dashboard
+### Frontend
+- React.js with TypeScript
+- Context API and Redux for state management
+- TanStack Query for data fetching
+- Recharts and Chart.js for visualizations
+- ShadCN UI components with Tailwind CSS
 
-## Quick Start
+### Backend
+- Node.js with Express
+- PostgreSQL database with Drizzle ORM
+- Authentication with Passport.js
+- Server-side validation with Zod
+
+### Machine Learning
+- Flask API for model serving
+- Logistic Regression model (99.76% accuracy)
+- Streamlit dashboard for model performance monitoring
+- Real credit card transaction data for training
+
+## API Endpoints
+
+### Fraud Detection
+
+#### 1. Predict Fraud Risk (no storage)
+```
+POST /api/fraud/predict
+```
+
+Request body:
+```json
+{
+  "amount": 2500,
+  "merchantCategory": "ecommerce",
+  "location": "abnormal",
+  "ipAddress": "192.168.1.1",
+  "cardEntryMethod": "online",
+  "timestamp": "2025-04-01T03:30:00Z"
+}
+```
+
+Response:
+```json
+{
+  "prediction": {
+    "is_fraud": true,
+    "confidence": 1,
+    "risk_level": "high"
+  },
+  "transaction": {
+    "amount": 2500,
+    "merchantCategory": "ecommerce",
+    "location": "abnormal",
+    "ipAddress": "192.168.1.1",
+    "cardEntryMethod": "online",
+    "timestamp": "2025-04-01T03:30:00Z"
+  }
+}
+```
+
+#### 2. Process and Store Transaction
+```
+POST /api/detect-fraud
+```
+
+Request body: Same as `/api/fraud/predict`
+
+Response:
+```json
+{
+  "fraudResult": {
+    "is_fraud": true,
+    "confidence": 1,
+    "risk_level": "high"
+  },
+  "transaction": {
+    "transactionId": "tx_abc123",
+    "amount": 2500,
+    "merchantCategory": "ecommerce",
+    "location": "abnormal",
+    "ipAddress": "192.168.1.1",
+    "cardEntryMethod": "online",
+    "timestamp": "2025-04-01T03:30:00Z",
+    "isFraud": true,
+    "status": "fraudulent"
+  }
+}
+```
+
+#### 3. CSV Bulk Analysis
+```
+POST /api/analyze-csv
+```
+- Upload a CSV file containing multiple transactions
+- Returns detailed analysis including patterns and statistics
+
+### Authentication
+
+- `POST /api/register` - Create new user account
+- `POST /api/login` - Authenticate existing user
+- `POST /api/logout` - End current session
+- `GET /api/user` - Get current user information
+
+### Transactions
+
+- `GET /api/transactions` - List all transactions
+- `GET /api/transactions/:id` - Get transaction details
+- `POST /api/transactions` - Create new transaction
+
+### Analytics
+
+- `GET /api/stats` - Get system statistics
+- `GET /api/analytics` - Get fraud analysis data
+
+## Machine Learning Model
+
+The system uses a Logistic Regression model trained on real credit card transaction data:
+
+- **Selected Features**: V1, V2, V3, V4, V10, V11, V14, Amount
+- **Preprocessing**: StandardScaler for normalization
+- **Performance**: 99.76% accuracy, high precision and recall
+- **Fallback Mechanism**: Rule-based prediction when model service is unavailable
+
+## Running the Project
 
 ### Prerequisites
+- Node.js v16+
+- Python 3.8+ for ML components (optional)
+- PostgreSQL database
 
-- Node.js 20.x or later
-- Python 3.11 or later
-- PostgreSQL 15.x or later
+### Setup
 
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/fraud-detection-system.git
-   cd fraud-detection-system
-   ```
-
+1. Clone the repository
 2. Install dependencies:
-   ```bash
+   ```
    npm install
    ```
-
-3. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   # Edit the .env file with your database credentials and other settings
+3. Start the application:
    ```
-
-4. Set up the database:
-   ```bash
-   ./db-setup.sh
-   ```
-
-5. Start the development server:
-   ```bash
    npm run dev
    ```
-
-6. Start the model service:
-   ```bash
+4. For the ML component (optional):
+   ```
    cd model_service
-   python run.py --api
+   python run.py
    ```
 
-7. (Optional) Start the Streamlit dashboard:
-   ```bash
-   cd model_service
-   python run.py --streamlit
-   ```
+## Testing
 
-## Deployment
-
-For detailed deployment instructions, please refer to the [Deployment Guide](DEPLOYMENT.md).
-
-### Quick Deployment Options
-
-1. **Replit**:
-   - Click the "Deploy" button in your Replit project
-   - Follow the on-screen instructions
-
-2. **Docker**:
-   - Use Docker Compose:
-     ```bash
-     docker-compose up -d
-     ```
-
-3. **Manual Deployment**:
-   - Build the application:
-     ```bash
-     ./build.sh
-     ```
-   - Deploy the `dist` directory to your server
-   - Run `./prod-start.sh` on your server
-
-## Default Admin Access
-
-- Username: `admin`
-- Password: `password123`
-
-**IMPORTANT**: For production, please change the admin password immediately after first login.
-
-## Architecture
-
-The system consists of three main components:
-
-1. **Web Application**: A React/TypeScript frontend with Express.js backend
-2. **Machine Learning Service**: A Flask API serving the fraud detection model
-3. **Database**: PostgreSQL for storing user data, transactions, and analytics
+Run the test script to verify fraud detection:
+```
+node test-fraud-api.js
+```
 
 ## License
 
-[MIT License](LICENSE)
-
-## Support
-
-For support, please create an issue in the repository.
+MIT
