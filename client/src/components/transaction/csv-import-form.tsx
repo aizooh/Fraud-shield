@@ -272,7 +272,7 @@ export default function CSVImportForm() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Transactions</p>
-              <h4 className="text-2xl font-bold mt-1">{analysisResult.totalTransactions}</h4>
+              <h4 className="text-2xl font-bold mt-1">{analysisResult.totalTransactions || 0}</h4>
             </div>
             <Info className="h-5 w-5 text-muted-foreground" />
           </div>
@@ -282,7 +282,7 @@ export default function CSVImportForm() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Fraudulent</p>
-              <h4 className="text-2xl font-bold mt-1">{analysisResult.fraudulentTransactions}</h4>
+              <h4 className="text-2xl font-bold mt-1">{analysisResult.fraudulentTransactions || 0}</h4>
             </div>
             <AlertCircle className="h-5 w-5 text-destructive" />
           </div>
@@ -290,7 +290,7 @@ export default function CSVImportForm() {
             <div 
               className="h-full bg-destructive" 
               style={{ 
-                width: `${(analysisResult.fraudulentTransactions / analysisResult.totalTransactions) * 100}%` 
+                width: `${analysisResult.totalTransactions ? (analysisResult.fraudulentTransactions / analysisResult.totalTransactions) * 100 : 0}%` 
               }}
             />
           </div>
@@ -300,7 +300,7 @@ export default function CSVImportForm() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Suspicious</p>
-              <h4 className="text-2xl font-bold mt-1">{analysisResult.suspiciousTransactions}</h4>
+              <h4 className="text-2xl font-bold mt-1">{analysisResult.suspiciousTransactions || 0}</h4>
             </div>
             <AlertCircle className="h-5 w-5 text-amber-500" />
           </div>
@@ -308,7 +308,7 @@ export default function CSVImportForm() {
             <div 
               className="h-full bg-amber-500" 
               style={{ 
-                width: `${(analysisResult.suspiciousTransactions / analysisResult.totalTransactions) * 100}%` 
+                width: `${analysisResult.totalTransactions ? (analysisResult.suspiciousTransactions / analysisResult.totalTransactions) * 100 : 0}%` 
               }}
             />
           </div>
@@ -318,7 +318,7 @@ export default function CSVImportForm() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Safe</p>
-              <h4 className="text-2xl font-bold mt-1">{analysisResult.safeTransactions}</h4>
+              <h4 className="text-2xl font-bold mt-1">{analysisResult.safeTransactions || 0}</h4>
             </div>
             <CheckCircle className="h-5 w-5 text-emerald-500" />
           </div>
@@ -326,7 +326,7 @@ export default function CSVImportForm() {
             <div 
               className="h-full bg-emerald-500" 
               style={{ 
-                width: `${(analysisResult.safeTransactions / analysisResult.totalTransactions) * 100}%` 
+                width: `${analysisResult.totalTransactions ? (analysisResult.safeTransactions / analysisResult.totalTransactions) * 100 : 0}%` 
               }}
             />
           </div>
@@ -353,9 +353,9 @@ export default function CSVImportForm() {
                   <PieChart>
                     <Pie
                       data={[
-                        { name: "Safe", value: analysisResult.safeTransactions },
-                        { name: "Suspicious", value: analysisResult.suspiciousTransactions },
-                        { name: "Fraudulent", value: analysisResult.fraudulentTransactions },
+                        { name: "Safe", value: analysisResult.safeTransactions || 0 },
+                        { name: "Suspicious", value: analysisResult.suspiciousTransactions || 0 },
+                        { name: "Fraudulent", value: analysisResult.fraudulentTransactions || 0 },
                       ]}
                       cx="50%"
                       cy="50%"
@@ -387,7 +387,7 @@ export default function CSVImportForm() {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={analysisResult.fraudByMerchantCategory}
+                    data={analysisResult.fraudByMerchantCategory || []}
                     margin={{
                       top: 20,
                       right: 30,
@@ -422,7 +422,7 @@ export default function CSVImportForm() {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={analysisResult.fraudByCardEntryMethod}
+                    data={analysisResult.fraudByCardEntryMethod || []}
                     margin={{
                       top: 20,
                       right: 30,
@@ -452,7 +452,7 @@ export default function CSVImportForm() {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={analysisResult.amountDistribution}
+                    data={analysisResult.amountDistribution || []}
                     margin={{
                       top: 20,
                       right: 30,
@@ -486,7 +486,7 @@ export default function CSVImportForm() {
       </Tabs>
 
       {/* Sample Results Table */}
-      {analysisResult.sampleResults.length > 0 && (
+      {analysisResult.sampleResults && analysisResult.sampleResults.length > 0 && (
         <Card>
           <div className="p-4 border-b">
             <h3 className="text-lg font-medium">Sample Results</h3>
@@ -507,16 +507,16 @@ export default function CSVImportForm() {
                 </tr>
               </thead>
               <tbody>
-                {analysisResult.sampleResults.map((result, index) => (
+                {analysisResult.sampleResults && analysisResult.sampleResults.map((result, index) => (
                   <tr key={index} className="border-b hover:bg-muted/50">
                     <td className="px-4 py-3 text-sm">
-                      ${result.transaction.amount.toFixed(2)}
+                      ${result.transaction?.amount ? result.transaction.amount.toFixed(2) : '0.00'}
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      {result.transaction.merchantCategory}
+                      {result.transaction?.merchantCategory || 'Unknown'}
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      {result.transaction.cardEntryMethod}
+                      {result.transaction?.cardEntryMethod || 'Unknown'}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <span
@@ -528,11 +528,11 @@ export default function CSVImportForm() {
                             : "bg-green-100 text-green-800"
                         }`}
                       >
-                        {result.riskLevel}
+                        {result.riskLevel || 'unknown'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      {(result.confidence * 100).toFixed(1)}%
+                      {result.confidence ? (result.confidence * 100).toFixed(1) : '0.0'}%
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <span
@@ -544,7 +544,7 @@ export default function CSVImportForm() {
                             : "bg-green-100 text-green-800"
                         }`}
                       >
-                        {result.status}
+                        {result.status || 'unknown'}
                       </span>
                     </td>
                   </tr>
@@ -555,7 +555,7 @@ export default function CSVImportForm() {
         </Card>
       )}
 
-      {analysisResult.errorCount > 0 && (
+      {analysisResult.errorCount !== undefined && analysisResult.errorCount > 0 && (
         <div className="text-sm text-muted-foreground flex items-center">
           <AlertCircle className="mr-2 h-4 w-4 text-amber-500" />
           <span>
