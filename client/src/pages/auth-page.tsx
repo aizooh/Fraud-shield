@@ -109,9 +109,12 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center p-6 lg:p-10">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold tracking-tight">
-              Fraud Guardian
-            </h1>
+            <div className="flex items-center justify-center mb-2">
+              <span className="material-icons text-primary mr-2">shield</span>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Fraud Shield
+              </h1>
+            </div>
             <p className="text-muted-foreground mt-2">
               Sign in to your account or create a new one
             </p>
@@ -389,7 +392,7 @@ export default function AuthPage() {
         <div className="absolute inset-0 bg-pattern opacity-5"></div>
         <div className="relative z-10 flex flex-col justify-center items-center px-10 text-center">
           <h2 className="text-4xl font-bold tracking-tight mb-4">
-            Welcome to <span className="text-primary">Fraud Guardian</span>
+            Welcome to <span className="text-primary">Fraud Shield</span>
           </h2>
           <div className="max-w-lg">
             <p className="text-lg mb-6">

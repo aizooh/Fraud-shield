@@ -22,7 +22,7 @@ export default function MobileSidebar() {
             <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span className="ml-2 font-semibold text-lg">FraudShield</span>
+          <span className="ml-2 font-semibold text-lg">Fraud Shield</span>
         </div>
         <button onClick={toggleMenu} className="text-gray-300">
           <span className="material-icons">{isMenuOpen ? 'close' : 'menu'}</span>

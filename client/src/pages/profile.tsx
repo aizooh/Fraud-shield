@@ -151,7 +151,10 @@ export default function ProfilePage() {
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight mb-2">Account Settings</h1>
+            <div className="flex items-center">
+              <span className="material-icons mr-2 text-primary">home</span>
+              <h1 className="text-3xl font-bold tracking-tight mb-2">Account Settings</h1>
+            </div>
             <p className="text-muted-foreground">
               Manage your account settings and preferences
             </p>

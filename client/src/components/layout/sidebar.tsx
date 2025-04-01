@@ -17,7 +17,7 @@ export default function Sidebar() {
               <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span className="ml-2 text-white font-semibold text-lg">FraudShield</span>
+            <span className="ml-2 text-white font-semibold text-lg">Fraud Shield</span>
           </div>
         </div>
         <div className="flex-1 flex flex-col overflow-y-auto">
