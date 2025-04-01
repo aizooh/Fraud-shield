@@ -50,6 +50,9 @@ def generate_sample_data(n_samples=1000):
         'is_online': np.random.choice([0, 1], size=n_samples, p=[0.3, 0.7]),
         'is_manual': np.random.choice([0, 1], size=n_samples, p=[0.8, 0.2]),
         'is_ecommerce': np.random.choice([0, 1], size=n_samples, p=[0.5, 0.5]),
+        'hour_of_day': np.random.randint(0, 24, n_samples),
+        'is_weekend': np.random.choice([0, 1], size=n_samples, p=[0.7, 0.3]),
+        'location_mismatch': np.random.choice([0, 1], size=n_samples, p=[0.9, 0.1]),
     }
     
     # Generate labels with some relationship to features
@@ -60,6 +63,16 @@ def generate_sample_data(n_samples=1000):
             prob += 0.2
         if data['is_manual'][i] == 1:
             prob += 0.1
+        if data['location_mismatch'][i] == 1:
+            prob += 0.3
+        if 0 <= data['hour_of_day'][i] <= 5:  # Late night/early morning
+            prob += 0.05
+        if data['is_weekend'][i] == 1:
+            prob += 0.05
+        
+        # Cap at 0.9 to avoid certainty
+        prob = min(prob, 0.9)
+        
         labels[i] = np.random.choice([0, 1], p=[1-prob, prob])
     
     data['is_fraud'] = labels
@@ -88,7 +101,7 @@ if page == "Model Overview":
         # Display feature importances if available
         if hasattr(model, 'feature_importances_'):
             importances = model.feature_importances_
-            feature_names = ['amount', 'is_online', 'is_manual', 'is_ecommerce']
+            feature_names = ['amount', 'is_online', 'is_manual', 'is_ecommerce', 'hour_of_day', 'is_weekend', 'location_mismatch']
             importance_df = pd.DataFrame({
                 'Feature': feature_names,
                 'Importance': importances
@@ -153,17 +166,32 @@ elif page == "Test Prediction":
                 options=["retail", "ecommerce", "travel", "restaurant", "entertainment"],
                 index=0
             )
+            
+        st.subheader("Additional Risk Factors")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            hour_of_day = st.slider("Hour of Day (24h)", 0, 23, 12)
+        
+        with col2:
+            is_weekend = st.checkbox("Weekend Transaction")
+            
+        with col3:
+            location_mismatch = st.checkbox("Abnormal Location")
         
         # Submit button
         submitted = st.form_submit_button("Predict")
     
     if submitted:
-        # Prepare features
+        # Prepare features with all 7 parameters
         features = {
             "amount": amount,
             "is_online": 1 if card_entry == "online" else 0,
             "is_manual": 1 if card_entry == "manual" else 0,
             "is_ecommerce": 1 if merchant_category == "ecommerce" else 0,
+            "hour_of_day": hour_of_day,
+            "is_weekend": 1 if is_weekend else 0,
+            "location_mismatch": 1 if location_mismatch else 0
         }
         
         # Make prediction
@@ -172,21 +200,40 @@ elif page == "Test Prediction":
                 features["amount"],
                 features["is_online"],
                 features["is_manual"],
-                features["is_ecommerce"]
+                features["is_ecommerce"],
+                features["hour_of_day"],
+                features["is_weekend"],
+                features["location_mismatch"]
             ]])
             
             prediction = model.predict_proba(feature_array)[0][1]
         else:
-            # Demo mode
+            # Demo mode - using rule-based approach
             prediction = 0.1  # Default low probability
             
-            # Simple rule-based logic
+            # Simple rule-based logic that considers all features
             if amount > 2000:
-                prediction = 0.9
+                prediction += 0.4
             elif amount > 1000:
-                prediction = 0.6
-            elif card_entry == "manual":
-                prediction = 0.4
+                prediction += 0.2
+                
+            if card_entry == "manual":
+                prediction += 0.2
+                
+            if merchant_category == "ecommerce":
+                prediction += 0.1
+                
+            if location_mismatch:
+                prediction += 0.3
+                
+            if is_weekend:
+                prediction += 0.05
+                
+            if hour_of_day < 6 or hour_of_day > 22:  # Late night/early morning
+                prediction += 0.1
+                
+            # Cap at 1.0
+            prediction = min(prediction, 1.0)
         
         is_fraud = prediction > 0.5
         risk_level = get_risk_level(prediction)
@@ -213,11 +260,24 @@ elif page == "Test Prediction":
         
         explanation = []
         if amount > 2000:
-            explanation.append("• High transaction amount increases fraud risk.")
+            explanation.append("• High transaction amount significantly increases fraud risk.")
+        elif amount > 1000:
+            explanation.append("• Moderate-high transaction amount increases fraud risk.")
+            
         if card_entry == "manual":
             explanation.append("• Manual card entry method increases risk.")
+            
         if merchant_category == "ecommerce":
             explanation.append("• E-commerce transactions have elevated risk.")
+            
+        if location_mismatch:
+            explanation.append("• Abnormal transaction location is a major risk factor.")
+            
+        if is_weekend:
+            explanation.append("• Weekend transactions have slightly higher risk.")
+            
+        if hour_of_day < 6 or hour_of_day > 22:
+            explanation.append(f"• Time of transaction ({hour_of_day}:00) outside business hours increases risk.")
         
         if not explanation:
             explanation.append("• This transaction has normal risk patterns.")
@@ -229,23 +289,47 @@ elif page == "Test Prediction":
 elif page == "Model Performance":
     st.header("Model Performance Metrics")
     
-    # Generate predictions on sample data
-    X = sample_data[['amount', 'is_online', 'is_manual', 'is_ecommerce']]
+    # Generate predictions on sample data using all 7 features
+    X = sample_data[['amount', 'is_online', 'is_manual', 'is_ecommerce', 'hour_of_day', 'is_weekend', 'location_mismatch']]
     y_true = sample_data['is_fraud']
     
     if model_loaded:
         y_pred = model.predict(X)
         y_prob = model.predict_proba(X)[:, 1]
     else:
-        # Demo mode - generate predictions with simple rules
+        # Demo mode - generate predictions with more sophisticated rules
         y_prob = np.zeros(len(sample_data))
         for i, row in sample_data.iterrows():
             prob = 0.05  # Base fraud probability
+            
+            # Amount-based risk
             if row['amount'] > 1000:
                 prob += 0.2
+                
+            # Card entry risk
             if row['is_manual'] == 1:
                 prob += 0.1
+                
+            # E-commerce risk
+            if row['is_ecommerce'] == 1:
+                prob += 0.08
+                
+            # Location risk (highest impact)
+            if row['location_mismatch'] == 1:
+                prob += 0.3
+                
+            # Time-based risk
+            if row['hour_of_day'] < 6 or row['hour_of_day'] > 22:
+                prob += 0.05
+                
+            # Weekend risk
+            if row['is_weekend'] == 1:
+                prob += 0.05
+                
+            # Cap at 0.95 for demo
+            prob = min(prob, 0.95)
             y_prob[i] = prob
+            
         y_pred = (y_prob > 0.5).astype(int)
     
     # Calculate confusion matrix

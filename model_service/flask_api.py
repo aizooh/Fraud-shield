@@ -45,12 +45,37 @@ def preprocess_input(request_data):
     # - Scale numerical features
     # - Extract time-based features if timestamp is provided
     
-    # For this example, we'll just create some basic features
+    # Prepare the feature array:
+    # [amount, is_online, is_manual, is_ecommerce, hour_of_day, is_weekend, location_mismatch]
+    
+    # Extract timestamp information if available
+    hour_of_day = 12  # Default to noon
+    is_weekend = 0    # Default to weekday
+    
+    if "timestamp" in request_data and request_data["timestamp"]:
+        try:
+            from datetime import datetime
+            dt = datetime.fromisoformat(request_data["timestamp"].replace('Z', '+00:00'))
+            hour_of_day = dt.hour
+            is_weekend = 1 if dt.weekday() >= 5 else 0  # 5=Saturday, 6=Sunday
+        except:
+            # If timestamp parsing fails, use defaults
+            pass
+    
+    # Location mismatch (abnormal location)
+    location_mismatch = 0
+    if "location" in request_data and request_data["location"] == "abnormal":
+        location_mismatch = 1
+    
+    # For this example, we'll extract features matching our model
     features = {
-        "amount": request_data.get("amount", 0),
+        "amount": float(request_data.get("amount", 0)),
         "is_online": 1 if request_data.get("cardEntryMethod") == "online" else 0,
         "is_manual": 1 if request_data.get("cardEntryMethod") == "manual" else 0,
         "is_ecommerce": 1 if request_data.get("merchantCategory") == "ecommerce" else 0,
+        "hour_of_day": hour_of_day,
+        "is_weekend": is_weekend,
+        "location_mismatch": location_mismatch
     }
     
     return features
@@ -83,8 +108,9 @@ def health():
     # Check if the model can make a basic prediction
     if model is not None:
         try:
-            # Test with minimal data
-            test_features = np.array([[100, 0, 0, 0]])
+            # Test with minimal data - all 7 features:
+            # [amount, is_online, is_manual, is_ecommerce, hour_of_day, is_weekend, location_mismatch]
+            test_features = np.array([[100, 0, 0, 0, 12, 0, 0]])
             model.predict_proba(test_features)
             health_status["model_status"] = "ok"
         except Exception as e:
@@ -113,31 +139,52 @@ def predict():
         
         # Use the model if it's loaded, otherwise use fallback logic
         if model is not None:
-            # In a real implementation, prepare the features into the format
-            # expected by your model (likely a numpy array)
+            # Prepare the features array with all 7 features in the correct order:
+            # [amount, is_online, is_manual, is_ecommerce, hour_of_day, is_weekend, location_mismatch]
             feature_array = np.array([[
                 features["amount"],
                 features["is_online"],
                 features["is_manual"],
-                features["is_ecommerce"]
+                features["is_ecommerce"],
+                features["hour_of_day"],
+                features["is_weekend"],
+                features["location_mismatch"]
             ]])
             
             # Get prediction from model
-            prediction = model.predict_proba(feature_array)[0][1]  # Assuming binary classification
+            prediction = model.predict_proba(feature_array)[0][1]  # Probability of class 1 (fraud)
             is_fraud = prediction > 0.5
         else:
             # Fallback logic when model isn't available
-            # This is for demonstration purposes
+            # This is for demonstration purposes - using rule-based approach
             prediction = 0.1  # Default low probability
             
-            # Simple rule-based fallback
-            amount = request_data.get('amount', 0)
+            # Simple rule-based fallback based on our features
+            amount = features["amount"]
+            is_manual = features["is_manual"]
+            is_weekend = features["is_weekend"]
+            location_mismatch = features["location_mismatch"]
+            
+            # Rule 1: High amounts are suspicious
             if amount > 2000:
-                prediction = 0.9
+                prediction += 0.5
             elif amount > 1000:
-                prediction = 0.6
-            elif request_data.get('cardEntryMethod') == "manual":
-                prediction = 0.4
+                prediction += 0.3
+                
+            # Rule 2: Manual card entry is slightly riskier
+            if is_manual:
+                prediction += 0.2
+                
+            # Rule 3: Abnormal location is very suspicious
+            if location_mismatch:
+                prediction += 0.4
+                
+            # Rule 4: Weekend transactions slightly higher risk
+            if is_weekend:
+                prediction += 0.1
+                
+            # Cap at 1.0
+            prediction = min(prediction, 1.0)
                 
             is_fraud = prediction > 0.5
         

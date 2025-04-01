@@ -146,7 +146,14 @@ export const fraudDetectionRequestSchema = z.object({
   location: z.string().optional(),
   ipAddress: z.string().optional(),
   cardEntryMethod: z.string().min(1),
-  timestamp: z.string().optional()
+  timestamp: z.string().optional(),
+  // Adding these fields to match our model
+  hour_of_day: z.number().min(0).max(23).optional(),
+  is_weekend: z.boolean().optional(),
+  is_online: z.boolean().optional(),
+  is_manual: z.boolean().optional(),
+  is_ecommerce: z.boolean().optional(),
+  location_mismatch: z.boolean().optional()
 });
 
 export const fraudDetectionResultSchema = z.object({
