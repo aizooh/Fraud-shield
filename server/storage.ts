@@ -4,13 +4,12 @@ import { transactions, users, userSettings, analyticsData,
   type UserSettings, type InsertUserSettings, type UpdateUserSettings,
   type AnalyticsData, type InsertAnalyticsData } from "@shared/schema";
 import { nanoid } from "nanoid";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, desc, and, sql, count, avg } from "drizzle-orm";
-import { Pool } from "pg";
 import session from "express-session";
-import connectPg from "connect-pg-simple";
+import pgSessionConnect from "connect-pg-simple";
 
-const PostgresSessionStore = connectPg(session);
+const PostgresSessionStore = pgSessionConnect(session);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -51,7 +50,7 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     // Initialize session store
     this.sessionStore = new PostgresSessionStore({
-      pool: new Pool({ connectionString: process.env.DATABASE_URL }),
+      pool,
       createTableIfMissing: true
     });
     
@@ -92,13 +91,23 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUserByProviderId(provider: string, providerId: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(
-      and(
-        eq(users.authProvider, provider),
-        eq(users.authProviderId, providerId)
-      )
-    );
-    return user;
+    // Handle auth provider separately based on the provider string
+    let userResult;
+    
+    if (provider === "local" || provider === "google") {
+      const [user] = await db.select().from(users).where(
+        and(
+          eq(users.authProvider, provider),
+          eq(users.authProviderId, providerId)
+        )
+      );
+      userResult = user;
+    } else {
+      // Default fallback if provider is not recognized
+      userResult = undefined;
+    }
+    
+    return userResult;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -257,7 +266,7 @@ export class DatabaseStorage implements IStorage {
       totalTransactions: stats?.totalCount || 0,
       fraudDetected: stats?.fraudCount || 0,
       suspiciousTransactions: stats?.suspiciousCount || 0,
-      detectionAccuracy: stats?.avgConfidence || 0
+      detectionAccuracy: Number(stats?.avgConfidence || 0)
     };
   }
 }
