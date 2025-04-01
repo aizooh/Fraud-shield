@@ -1,8 +1,10 @@
 import { TransactionResult } from "@shared/schema";
+import axios from "axios";
 
-// This service would normally communicate with a Python FastAPI service
-// that loads and serves the .pkl model. For this implementation, we'll create
-// a simulation of the model's behavior.
+// This service communicates with a Python Flask service
+// that loads and serves the ML model.
+
+const MODEL_SERVICE_URL = process.env.MODEL_SERVICE_URL || "http://localhost:8001";
 
 export async function predictFraud(transaction: {
   amount: string;
@@ -12,9 +14,52 @@ export async function predictFraud(transaction: {
   cardEntryMethod: string;
   transactionTime: Date;
 }): Promise<TransactionResult> {
-  // In a real implementation, this function would make an HTTP request to the Python service
-  // For now, we'll simulate the model's predictions
+  try {
+    // Prepare the data to send to the model service
+    const requestData = {
+      amount: parseFloat(transaction.amount),
+      merchantCategory: transaction.merchantCategory,
+      location: transaction.location,
+      ipAddress: transaction.ipAddress,
+      cardEntryMethod: transaction.cardEntryMethod,
+      timestamp: transaction.transactionTime.toISOString()
+    };
 
+    // Make the API call to the Flask model service
+    const response = await axios.post(
+      `${MODEL_SERVICE_URL}/predict`,
+      requestData,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // Return the prediction result
+    return response.data as TransactionResult;
+  } catch (error) {
+    console.error("Error calling Flask model service:", error);
+    
+    // Fallback for development/testing if model service is unavailable
+    if (process.env.NODE_ENV === "development") {
+      console.warn("Using fallback response due to model service error");
+      return getFallbackPrediction(transaction);
+    }
+    
+    throw new Error("Failed to get prediction from model service");
+  }
+}
+
+// Fallback prediction if the model service is not available
+function getFallbackPrediction(transaction: {
+  amount: string;
+  merchantCategory: string;
+  location: string;
+  ipAddress: string;
+  cardEntryMethod: string;
+  transactionTime: Date;
+}): TransactionResult {
   // Parse amount as a number
   const amount = parseFloat(transaction.amount);
 
