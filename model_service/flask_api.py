@@ -70,6 +70,34 @@ def get_risk_level(confidence: float) -> RiskLevel:
 def root():
     return jsonify({"message": "Fraud Detection Model API", "status": "active"})
 
+@app.route('/health')
+def health():
+    """Health check endpoint for monitoring"""
+    health_status = {
+        "status": "ok",
+        "timestamp": __import__("datetime").datetime.now().isoformat(),
+        "version": "1.0.0",
+        "model_loaded": model is not None
+    }
+    
+    # Check if the model can make a basic prediction
+    if model is not None:
+        try:
+            # Test with minimal data
+            test_features = np.array([[100, 0, 0, 0]])
+            model.predict_proba(test_features)
+            health_status["model_status"] = "ok"
+        except Exception as e:
+            health_status["model_status"] = "error"
+            health_status["error"] = str(e)
+            health_status["status"] = "degraded"
+    else:
+        health_status["model_status"] = "not_loaded"
+        health_status["status"] = "degraded"
+    
+    status_code = 200 if health_status["status"] == "ok" else 500
+    return jsonify(health_status), status_code
+
 @app.route('/predict', methods=['POST'])
 def predict():
     try:

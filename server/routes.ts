@@ -12,6 +12,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication (login, register, session handling)
   setupAuth(app);
   
+  // Health check endpoint for monitoring
+  app.get("/api/health", async (req, res) => {
+    try {
+      // Perform a simple database query to check connection
+      const dbCheck = await storage.getUser(1).then(() => true).catch(() => false);
+      
+      const healthStatus = {
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        services: {
+          api: "ok",
+          database: dbCheck ? "ok" : "error",
+          model: req.query.checkModel === "true" ? 
+            await modelService.detectFraud({
+              amount: 1,
+              merchantCategory: "test",
+              cardEntryMethod: "test"
+            }).then(() => "ok").catch(() => "error") : 
+            "not_checked"
+        },
+        version: process.env.npm_package_version || "1.0.0"
+      };
+      
+      if (!dbCheck) {
+        healthStatus.status = "degraded";
+      }
+      
+      res.json(healthStatus);
+    } catch (error) {
+      res.status(500).json({
+        status: "error",
+        timestamp: new Date().toISOString(),
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+  
   // Get all transactions
   app.get("/api/transactions", async (req, res) => {
     try {

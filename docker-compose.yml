@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Web application (frontend + backend)
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/fraud_detection
+      - PGUSER=postgres
+      - PGHOST=db
+      - PGPASSWORD=postgres
+      - PGDATABASE=fraud_detection
+      - PGPORT=5432
+      - SESSION_SECRET=change_this_to_a_secure_secret
+      - MODEL_SERVICE_URL=http://modelservice:8001
+    depends_on:
+      - db
+      - modelservice
+    restart: unless-stopped
+
+  # Machine Learning API service
+  modelservice:
+    build:
+      context: ./model_service
+      dockerfile: Dockerfile.flask
+    ports:
+      - "8001:8001"
+    environment:
+      - FLASK_ENV=production
+    volumes:
+      - ./model_service:/app
+    restart: unless-stopped
+
+  # Streamlit dashboard for analytics
+  streamlit:
+    build:
+      context: ./model_service
+      dockerfile: Dockerfile.streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_HEADLESS=true
+    volumes:
+      - ./model_service:/app
+    restart: unless-stopped
+
+  # PostgreSQL database
+  db:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=fraud_detection
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
