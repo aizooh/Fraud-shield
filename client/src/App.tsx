@@ -7,6 +7,7 @@ import Dashboard from "@/pages/Dashboard";
 import FraudDetection from "@/pages/fraud-detection";
 import TransactionHistory from "@/pages/transaction-history";
 import AuthPage from "@/pages/auth-page";
+import ProfilePage from "@/pages/profile";
 import MainLayout from "@/components/layout/main-layout";
 import { Provider } from "react-redux";
 import { store } from "./store";
@@ -44,6 +45,9 @@ function Router() {
       </Route>
       <Route path="/transactions">
         {() => <PrivateRoute component={TransactionHistory} />}
+      </Route>
+      <Route path="/profile">
+        {() => <PrivateRoute component={ProfilePage} />}
       </Route>
       {/* Fallback to 404 */}
       <Route component={NotFound} />

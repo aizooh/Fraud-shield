@@ -1,10 +1,28 @@
-import { transactions, users, type User, type InsertUser, type Transaction, type InsertTransaction } from "@shared/schema";
+import { transactions, users, userSettings, analyticsData, 
+  type User, type InsertUser, type UpdateUser,
+  type Transaction, type InsertTransaction, 
+  type UserSettings, type InsertUserSettings, type UpdateUserSettings,
+  type AnalyticsData, type InsertAnalyticsData } from "@shared/schema";
 import { nanoid } from "nanoid";
+import { db } from "./db";
+import { eq, desc, and, sql, count, avg } from "drizzle-orm";
+import { Pool } from "pg";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByProviderId(provider: string, providerId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, updates: UpdateUser): Promise<User | undefined>;
+  
+  getUserSettings(userId: number): Promise<UserSettings | undefined>;
+  createUserSettings(settings: InsertUserSettings): Promise<UserSettings>;
+  updateUserSettings(userId: number, updates: UpdateUserSettings): Promise<UserSettings | undefined>;
   
   getTransactions(limit?: number, offset?: number): Promise<Transaction[]>;
   getTransactionById(transactionId: string): Promise<Transaction | undefined>;
@@ -14,81 +32,177 @@ export interface IStorage {
     transactionId: string, 
     updates: Partial<Omit<Transaction, "id" | "transactionId" | "timestamp" | "userId">>
   ): Promise<Transaction | undefined>;
+  
+  getAnalyticsData(): Promise<AnalyticsData[]>;
+  createAnalyticsData(data: InsertAnalyticsData): Promise<AnalyticsData>;
+  getTransactionStats(): Promise<{
+    totalTransactions: number;
+    fraudDetected: number;
+    suspiciousTransactions: number;
+    detectionAccuracy: number;
+  }>;
+  
+  sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private transactionsMap: Map<string, Transaction>;
-  private userIdCounter: number;
-  private transactionIdCounter: number;
-
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+  
   constructor() {
-    this.users = new Map();
-    this.transactionsMap = new Map();
-    this.userIdCounter = 1;
-    this.transactionIdCounter = 1;
-    
-    // Initialize with sample user
-    this.createUser({
-      username: "admin",
-      password: "password123"
+    // Initialize session store
+    this.sessionStore = new PostgresSessionStore({
+      pool: new Pool({ connectionString: process.env.DATABASE_URL }),
+      createTableIfMissing: true
     });
+    
+    // Seed admin user if not exists
+    this.seedAdminUser();
+  }
+  
+  private async seedAdminUser() {
+    const existingAdmin = await this.getUserByUsername("admin");
+    if (!existingAdmin) {
+      try {
+        await this.createUser({
+          username: "admin",
+          password: "password123", // This will be hashed in auth.ts
+          role: "admin"
+        });
+        console.log("Admin user created successfully");
+      } catch (error) {
+        console.error("Error creating admin user:", error);
+      }
+    }
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userIdCounter++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!email) return undefined;
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+  
+  async getUserByProviderId(provider: string, providerId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(
+      and(
+        eq(users.authProvider, provider),
+        eq(users.authProviderId, providerId)
+      )
+    );
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    
+    // Create default user settings
+    if (user) {
+      await this.createUserSettings({
+        userId: user.id,
+        emailNotifications: true,
+        pushNotifications: true,
+        theme: "light",
+        dashboardLayout: "default",
+        language: "en"
+      });
+    }
+    
+    return user;
+  }
+  
+  async updateUser(id: number, updates: UpdateUser): Promise<User | undefined> {
+    try {
+      const [updatedUser] = await db
+        .update(users)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(users.id, id))
+        .returning();
+      return updatedUser;
+    } catch (error) {
+      console.error("Error updating user:", error);
+      return undefined;
+    }
+  }
+  
+  async getUserSettings(userId: number): Promise<UserSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(userSettings)
+      .where(eq(userSettings.userId, userId));
+    return settings;
+  }
+  
+  async createUserSettings(settings: InsertUserSettings): Promise<UserSettings> {
+    const [createdSettings] = await db
+      .insert(userSettings)
+      .values(settings)
+      .returning();
+    return createdSettings;
+  }
+  
+  async updateUserSettings(userId: number, updates: UpdateUserSettings): Promise<UserSettings | undefined> {
+    try {
+      const [updatedSettings] = await db
+        .update(userSettings)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(userSettings.userId, userId))
+        .returning();
+      return updatedSettings;
+    } catch (error) {
+      console.error("Error updating user settings:", error);
+      return undefined;
+    }
+  }
+
   async getTransactions(limit: number = 100, offset: number = 0): Promise<Transaction[]> {
-    const transactions = Array.from(this.transactionsMap.values());
-    
-    // Sort by timestamp in descending order (newest first)
-    transactions.sort((a, b) => {
-      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-    });
-    
-    return transactions.slice(offset, offset + limit);
+    return db
+      .select()
+      .from(transactions)
+      .orderBy(desc(transactions.timestamp))
+      .limit(limit)
+      .offset(offset);
   }
 
   async getTransactionById(transactionId: string): Promise<Transaction | undefined> {
-    return this.transactionsMap.get(transactionId);
+    const [transaction] = await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.transactionId, transactionId));
+    return transaction;
   }
 
   async getTransactionsByUserId(userId: number): Promise<Transaction[]> {
-    return Array.from(this.transactionsMap.values())
-      .filter(transaction => transaction.userId === userId)
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.userId, userId))
+      .orderBy(desc(transactions.timestamp));
   }
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
-    const id = this.transactionIdCounter++;
     const transactionId = `TX-${nanoid(8)}`;
     
-    const transaction: Transaction = {
-      ...insertTransaction,
-      id,
-      transactionId,
-      isFraud: false,
-      confidence: 0,
-      riskLevel: "low",
-      status: "safe",
-      userId: insertTransaction.userId || null
-    };
+    const [transaction] = await db
+      .insert(transactions)
+      .values({
+        ...insertTransaction,
+        transactionId,
+        isFraud: false,
+        confidence: 0,
+        riskLevel: "low",
+        status: "safe"
+      })
+      .returning();
     
-    this.transactionsMap.set(transactionId, transaction);
     return transaction;
   }
 
@@ -96,20 +210,56 @@ export class MemStorage implements IStorage {
     transactionId: string,
     updates: Partial<Omit<Transaction, "id" | "transactionId" | "timestamp" | "userId">>
   ): Promise<Transaction | undefined> {
-    const transaction = this.transactionsMap.get(transactionId);
-    
-    if (!transaction) {
+    try {
+      const [updatedTransaction] = await db
+        .update(transactions)
+        .set(updates)
+        .where(eq(transactions.transactionId, transactionId))
+        .returning();
+      return updatedTransaction;
+    } catch (error) {
+      console.error("Error updating transaction:", error);
       return undefined;
     }
-    
-    const updatedTransaction = {
-      ...transaction,
-      ...updates,
+  }
+  
+  async getAnalyticsData(): Promise<AnalyticsData[]> {
+    return db
+      .select()
+      .from(analyticsData)
+      .orderBy(desc(analyticsData.date));
+  }
+  
+  async createAnalyticsData(data: InsertAnalyticsData): Promise<AnalyticsData> {
+    const [createdData] = await db
+      .insert(analyticsData)
+      .values(data)
+      .returning();
+    return createdData;
+  }
+  
+  async getTransactionStats(): Promise<{
+    totalTransactions: number;
+    fraudDetected: number;
+    suspiciousTransactions: number;
+    detectionAccuracy: number;
+  }> {
+    const [stats] = await db
+      .select({
+        totalCount: count(transactions.id).as("total"),
+        fraudCount: sql<number>`CAST(SUM(CASE WHEN ${transactions.isFraud} = true THEN 1 ELSE 0 END) AS INTEGER)`.as("fraud"),
+        suspiciousCount: sql<number>`CAST(SUM(CASE WHEN ${transactions.status} = 'suspicious' THEN 1 ELSE 0 END) AS INTEGER)`.as("suspicious"),
+        avgConfidence: avg(transactions.confidence).as("accuracy")
+      })
+      .from(transactions);
+      
+    return {
+      totalTransactions: stats?.totalCount || 0,
+      fraudDetected: stats?.fraudCount || 0,
+      suspiciousTransactions: stats?.suspiciousCount || 0,
+      detectionAccuracy: stats?.avgConfidence || 0
     };
-    
-    this.transactionsMap.set(transactionId, updatedTransaction);
-    return updatedTransaction;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

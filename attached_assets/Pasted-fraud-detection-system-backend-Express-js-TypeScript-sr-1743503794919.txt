@@ -1,0 +1,127 @@
+fraud-detection-system/
+├── backend/                          # Express.js + TypeScript
+│   ├── src/
+│   │   ├── config/                   # Configurations
+│   │   │   ├── db.ts                 # Database config
+│   │   │   ├── env.ts                # Environment variables
+│   │   │   └── middlewares.ts        # Custom middlewares
+│   │   │
+│   │   ├── controllers/              # Route controllers
+│   │   │   ├── auth.controller.ts    # Auth logic
+│   │   │   ├── fraud.controller.ts   # Fraud prediction
+│   │   │   ├── history.controller.ts # Transaction history
+│   │   │   └── admin.controller.ts   # Admin actions
+│   │   │
+│   │   ├── models/                   # Database models
+│   │   │   ├── User.ts               # User schema
+│   │   │   ├── Transaction.ts        # Transaction records
+│   │   │   └── FraudCheck.ts         # Audit logs
+│   │   │
+│   │   ├── routes/                   # API endpoints
+│   │   │   ├── auth.routes.ts        # /api/auth
+│   │   │   ├── fraud.routes.ts       # /api/fraud
+│   │   │   ├── history.routes.ts     # /api/history
+│   │   │   └── index.ts              # Consolidated routes
+│   │   │
+│   │   ├── services/                 # Business logic
+│   │   │   ├── AuthService.ts        # User management
+│   │   │   ├── FraudService.ts       # Model prediction
+│   │   │   ├── HistoryService.ts     # Transaction CRUD
+│   │   │   └── AdminService.ts       # Dashboard analytics
+│   │   │
+│   │   ├── utils/                    # Helpers
+│   │   │   ├── logger.ts             # Winston logger
+│   │   │   ├── apiResponse.ts        # Standardized responses
+│   │   │   └── fraudPreprocessor.ts  # Data preprocessing
+│   │   │
+│   │   ├── ml/                       # Machine Learning
+│   │   │   ├── model.pkl             # Your trained model
+│   │   │   ├── predictor.ts          # Model wrapper
+│   │   │   └── constants.ts          # Feature mappings
+│   │   │
+│   │   ├── types/                    # TypeScript types
+│   │   │   ├── express/              # Extended Request types
+│   │   │   ├── fraud.d.ts            # Prediction types
+│   │   │   └── user.d.ts             # User/JWT types
+│   │   │
+│   │   ├── app.ts                    # Express app setup
+│   │   └── server.ts                 # Server entry
+│   │
+│   ├── tests/                        # Integration tests
+│   ├── Dockerfile
+│   └── package.json
+│
+├── frontend/                         # React + TypeScript
+│   ├── src/
+│   │   ├── assets/                   # Static files
+│   │   │   ├── styles/               # Global CSS
+│   │   │   └── images/               # App images
+│   │   │
+│   │   ├── components/               # Reusable UI
+│   │   │   ├── auth/
+│   │   │   │   ├── LoginForm.tsx
+│   │   │   │   └── RegisterForm.tsx
+│   │   │   │
+│   │   │   ├── dashboard/
+│   │   │   │   ├── FraudChart.tsx    # Chart.js component
+│   │   │   │   ├── StatsCard.tsx     # Metric displays
+│   │   │   │   └── RecentActivity.tsx
+│   │   │   │
+│   │   │   ├── history/
+│   │   │   │   ├── TransactionTable.tsx
+│   │   │   │   └── Filters.tsx
+│   │   │   │
+│   │   │   └── common/
+│   │   │       ├── Navbar.tsx
+│   │   │       └── ProtectedRoute.tsx
+│   │   │
+│   │   ├── pages/                    # Main views
+│   │   │   ├── Auth/                 # Auth pages
+│   │   │   │   ├── LoginPage.tsx
+│   │   │   │   └── RegisterPage.tsx
+│   │   │   │
+│   │   │   ├── Dashboard/            # Main dashboard
+│   │   │   │   ├── Overview.tsx      # Summary stats
+│   │   │   │   ├── FraudTrends.tsx   # Charts
+│   │   │   │   └── index.tsx
+│   │   │   │
+│   │   │   ├── History/              # Transaction history
+│   │   │   │   ├── ListView.tsx
+│   │   │   │   └── DetailView.tsx
+│   │   │   │
+│   │   │   ├── FraudCheck/           # Prediction interface
+│   │   │   │   ├── NewCheckForm.tsx
+│   │   │   │   └── ResultsView.tsx
+│   │   │   │
+│   │   │   └── Admin/                # Admin console
+│   │   │       ├── UserManagement.tsx
+│   │   │       └── ModelManagement.tsx
+│   │   │
+│   │   ├── store/                    # State management
+│   │   │   ├── slices/
+│   │   │   │   ├── authSlice.ts      # Auth state
+│   │   │   │   └── fraudSlice.ts     # Prediction results
+│   │   │   └── store.ts              # Redux store
+│   │   │
+│   │   ├── hooks/                    # Custom hooks
+│   │   │   ├── useAuth.ts            # Auth utilities
+│   │   │   └── useFraudAPI.ts        # API calls
+│   │   │
+│   │   ├── api/                      # API clients
+│   │   │   ├── authAPI.ts            # Auth endpoints
+│   │   │   ├── fraudAPI.ts           # Prediction endpoints
+│   │   │   └── historyAPI.ts         # Transaction endpoints
+│   │   │
+│   │   ├── App.tsx                   # Main router
+│   │   ├── main.tsx                  # Entry point
+│   │   └── vite-env.d.ts             # Type declarations
+│   │
+│   ├── public/                       # Static assets
+│   ├── Dockerfile
+│   └── package.json
+│
+├── docker-compose.yml                # Full stack orchestration
+├── docs/                             # Documentation
+│   ├── API.md                        # API specifications
+│   └── SETUP.md                      # Deployment guide
+└── README.md                         # Project overview
