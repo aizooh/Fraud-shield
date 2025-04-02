@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
+import { useAuth } from "@/contexts/auth-context";
+import { LogOut, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function MobileSidebar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
+  const { user, isAdmin, logout } = useAuth();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -11,6 +16,21 @@ export default function MobileSidebar() {
 
   const isActive = (path: string) => {
     return location === path;
+  };
+
+  // Generate initials for avatar fallback
+  const getInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    } else if (user?.username) {
+      return user.username.substring(0, 2).toUpperCase();
+    }
+    return "U";
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = "/auth"; // Redirect to auth page after logout
   };
 
   return (
@@ -24,9 +44,22 @@ export default function MobileSidebar() {
           </svg>
           <span className="ml-2 font-semibold text-lg">Fraud Shield</span>
         </div>
-        <button onClick={toggleMenu} className="text-gray-300">
-          <span className="material-icons">{isMenuOpen ? 'close' : 'menu'}</span>
-        </button>
+        <div className="flex items-center">
+          {user && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout} 
+              className="text-gray-400 hover:text-white hover:bg-gray-700 mr-2"
+              title="Logout"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          )}
+          <button onClick={toggleMenu} className="text-gray-300">
+            <span className="material-icons">{isMenuOpen ? 'close' : 'menu'}</span>
+          </button>
+        </div>
       </div>
 
       {isMenuOpen && (
@@ -75,11 +108,43 @@ export default function MobileSidebar() {
               <span className="material-icons mr-3 text-lg">bar_chart</span>
               Analytics
             </a>
-            <a className="flex items-center px-3 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
-              <span className="material-icons mr-3 text-lg">settings</span>
-              Settings
-            </a>
+            <Link href="/profile">
+              <div 
+                className={`flex items-center px-3 py-2 text-base font-medium rounded-md cursor-pointer ${
+                  isActive("/profile") 
+                    ? "text-white bg-gray-700" 
+                    : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <span className="material-icons mr-3 text-lg">settings</span>
+                Account Settings
+              </div>
+            </Link>
           </nav>
+          
+          {/* User profile section */}
+          {user && (
+            <div className="px-5 py-3 border-t border-gray-700">
+              <Link href="/profile">
+                <div 
+                  className="flex items-center text-gray-300 hover:text-white cursor-pointer"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Avatar className="h-8 w-8">
+                    {user?.profilePicture ? (
+                      <AvatarImage src={user.profilePicture} alt={user.username} />
+                    ) : null}
+                    <AvatarFallback className="bg-gray-700 text-white">{getInitials()}</AvatarFallback>
+                  </Avatar>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium">{user?.username || 'User'}</p>
+                    <p className="text-xs text-gray-400">{isAdmin ? 'Admin' : 'User'}</p>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </>

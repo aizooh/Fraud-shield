@@ -1,10 +1,30 @@
 import { useLocation, Link } from "wouter";
+import { useAuth } from "@/contexts/auth-context";
+import { LogOut, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Sidebar() {
   const [location] = useLocation();
+  const { user, isAdmin, logout } = useAuth();
 
   const isActive = (path: string) => {
     return location === path;
+  };
+
+  // Generate initials for avatar fallback
+  const getInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    } else if (user?.username) {
+      return user.username.substring(0, 2).toUpperCase();
+    }
+    return "U";
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = "/auth"; // Redirect to auth page after logout
   };
 
   return (
@@ -56,21 +76,45 @@ export default function Sidebar() {
               <span className="material-icons mr-3 text-lg">bar_chart</span>
               Analytics
             </a>
-            <a className="flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
-              <span className="material-icons mr-3 text-lg">settings</span>
-              Settings
-            </a>
+            <Link href="/profile">
+              <div className={`flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                isActive("/profile") 
+                  ? "text-white bg-gray-700" 
+                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+              }`}>
+                <span className="material-icons mr-3 text-lg">settings</span>
+                Account Settings
+              </div>
+            </Link>
           </nav>
+          
+          {/* User profile section with logout button */}
           <div className="p-4 border-t border-gray-700">
-            <a href="#" className="flex items-center text-gray-300 hover:text-white">
-              <div className="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center text-white">
-                <span className="material-icons text-sm">person</span>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium">John Smith</p>
-                <p className="text-xs text-gray-400">Admin</p>
-              </div>
-            </a>
+            <div className="flex items-center justify-between">
+              <Link href="/profile">
+                <div className="flex items-center text-gray-300 hover:text-white cursor-pointer">
+                  <Avatar className="h-8 w-8">
+                    {user?.profilePicture ? (
+                      <AvatarImage src={user.profilePicture} alt={user.username} />
+                    ) : null}
+                    <AvatarFallback className="bg-gray-700 text-white">{getInitials()}</AvatarFallback>
+                  </Avatar>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium">{user?.username || 'User'}</p>
+                    <p className="text-xs text-gray-400">{isAdmin ? 'Admin' : 'User'}</p>
+                  </div>
+                </div>
+              </Link>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleLogout} 
+                className="text-gray-400 hover:text-white hover:bg-gray-700"
+                title="Logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/auth-context";
-import { Loader2, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
+import { Loader2, User as UserIcon, Settings as SettingsIcon, LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const profileSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -66,9 +77,10 @@ type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<string>("profile");
-  const { user, userSettings, isLoading, updateProfile, updateSettings } = useAuth();
+  const { user, userSettings, isLoading, updateProfile, updateSettings, logout } = useAuth();
   const [profileUpdating, setProfileUpdating] = useState(false);
   const [settingsUpdating, setSettingsUpdating] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   // Initialize profile form
   const profileForm = useForm<ProfileFormValues>({
@@ -179,6 +191,46 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* Account Logout Button */}
+        <div className="flex justify-end mb-6">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="flex items-center gap-2">
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You will be redirected to the login page.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={async () => {
+                    setLoggingOut(true);
+                    await logout();
+                    window.location.href = "/auth";
+                  }}
+                  disabled={loggingOut}
+                >
+                  {loggingOut ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Logging out...
+                    </>
+                  ) : (
+                    "Yes, logout"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+        
         <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="profile" className="flex items-center">
