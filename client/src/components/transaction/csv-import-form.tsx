@@ -130,13 +130,29 @@ export default function CSVImportForm() {
         body: formData,
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to analyze CSV file");
+      }
+
       const result = await response.json();
-      setAnalysisResult(result);
       
-      toast({
-        title: "Analysis complete",
-        description: `Analyzed ${result.totalTransactions} transactions`,
-      });
+      // Ensure we have a valid result with totalTransactions before setting state
+      if (result && typeof result.totalTransactions === 'number') {
+        setAnalysisResult(result);
+        toast({
+          title: "Analysis complete",
+          description: `Analyzed ${result.totalTransactions} transactions`,
+        });
+      } else {
+        // Handle unexpected result format
+        console.error("Unexpected result format:", result);
+        toast({
+          title: "Processing error",
+          description: "Received invalid response from server",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("CSV upload error:", error);
       toast({
