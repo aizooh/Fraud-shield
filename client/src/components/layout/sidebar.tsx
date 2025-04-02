@@ -90,7 +90,7 @@ export default function Sidebar() {
           
           {/* User profile section with logout button */}
           <div className="p-4 border-t border-gray-700">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col space-y-3">
               <Link href="/profile">
                 <div className="flex items-center text-gray-300 hover:text-white cursor-pointer">
                   <Avatar className="h-8 w-8">
@@ -105,14 +105,15 @@ export default function Sidebar() {
                   </div>
                 </div>
               </Link>
+              
+              {/* Sign out button with text and icon */}
               <Button 
                 variant="ghost" 
-                size="icon" 
                 onClick={handleLogout} 
-                className="text-gray-400 hover:text-white hover:bg-gray-700"
-                title="Logout"
+                className="flex justify-start pl-2 text-gray-400 hover:text-white hover:bg-gray-700 w-full"
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-4 w-4 mr-2" />
+                <span className="text-sm">Sign out</span>
               </Button>
             </div>
           </div>

@@ -45,17 +45,6 @@ export default function MobileSidebar() {
           <span className="ml-2 font-semibold text-lg">Fraud Shield</span>
         </div>
         <div className="flex items-center">
-          {user && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleLogout} 
-              className="text-gray-400 hover:text-white hover:bg-gray-700 mr-2"
-              title="Logout"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
-          )}
           <button onClick={toggleMenu} className="text-gray-300">
             <span className="material-icons">{isMenuOpen ? 'close' : 'menu'}</span>
           </button>
@@ -126,23 +115,35 @@ export default function MobileSidebar() {
           {/* User profile section */}
           {user && (
             <div className="px-5 py-3 border-t border-gray-700">
-              <Link href="/profile">
-                <div 
-                  className="flex items-center text-gray-300 hover:text-white cursor-pointer"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Avatar className="h-8 w-8">
-                    {user?.profilePicture ? (
-                      <AvatarImage src={user.profilePicture} alt={user.username} />
-                    ) : null}
-                    <AvatarFallback className="bg-gray-700 text-white">{getInitials()}</AvatarFallback>
-                  </Avatar>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium">{user?.username || 'User'}</p>
-                    <p className="text-xs text-gray-400">{isAdmin ? 'Admin' : 'User'}</p>
+              <div className="flex flex-col space-y-3">
+                <Link href="/profile">
+                  <div 
+                    className="flex items-center text-gray-300 hover:text-white cursor-pointer"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Avatar className="h-8 w-8">
+                      {user?.profilePicture ? (
+                        <AvatarImage src={user.profilePicture} alt={user.username} />
+                      ) : null}
+                      <AvatarFallback className="bg-gray-700 text-white">{getInitials()}</AvatarFallback>
+                    </Avatar>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium">{user?.username || 'User'}</p>
+                      <p className="text-xs text-gray-400">{isAdmin ? 'Admin' : 'User'}</p>
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+                
+                {/* Sign out button with text and icon */}
+                <Button 
+                  variant="ghost" 
+                  onClick={handleLogout} 
+                  className="flex justify-start pl-2 text-gray-400 hover:text-white hover:bg-gray-700 w-full"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  <span className="text-sm">Sign out</span>
+                </Button>
+              </div>
             </div>
           )}
         </div>
