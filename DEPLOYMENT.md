@@ -1,263 +1,337 @@
-# Deployment Guide for Fraud Shield
+# Fraud Shield Deployment Guide
 
-This document provides instructions for deploying the Fraud Shield application in various environments.
+This guide provides detailed instructions for deploying the Fraud Shield application in various environments: development, production, and using Docker.
 
 ## Table of Contents
 
-1. [Deployment Options](#deployment-options)
-2. [Environment Configuration](#environment-configuration)
-3. [Docker Deployment](#docker-deployment)
-4. [Standalone Deployment](#standalone-deployment)
-5. [Database Setup](#database-setup)
-6. [Model Service Deployment](#model-service-deployment)
-7. [Testing the Deployment](#testing-the-deployment)
-8. [Monitoring and Maintenance](#monitoring-and-maintenance)
-9. [Troubleshooting](#troubleshooting)
+- [Prerequisites](#prerequisites)
+- [Environment Configuration](#environment-configuration)
+- [Deployment Options](#deployment-options)
+  - [Development Deployment](#development-deployment)
+  - [Production Deployment](#production-deployment)
+  - [Docker Deployment](#docker-deployment)
+- [Database Setup](#database-setup)
+- [Model Service Deployment](#model-service-deployment)
+- [Security Considerations](#security-considerations)
+- [Monitoring and Maintenance](#monitoring-and-maintenance)
+- [Troubleshooting](#troubleshooting)
 
-## Deployment Options
+## Prerequisites
 
-Fraud Shield can be deployed in several ways:
+Before deploying Fraud Shield, ensure you have the following:
 
-1. **Docker Deployment**: Using Docker and Docker Compose for containerized deployment
-2. **Standalone Deployment**: Directly on a server or cloud VM
-3. **Cloud Platform Deployment**: Using services like AWS, GCP, or Azure
+- **Node.js**: Version 18.x or higher
+- **Python**: Version 3.10 or higher
+- **PostgreSQL**: Version 14.x or higher
+- **Docker** (optional): For containerized deployment
+- **Git**: For source code management
+- **npm**: For Node.js package management
+- **pip**: For Python package management
 
 ## Environment Configuration
 
-Before deployment, configure the environment variables in `.env` file:
+The application requires specific environment variables to operate correctly. Create a `.env` file in the project root with the following variables:
 
 ```
-# Database Configuration
-DATABASE_URL=postgresql://username:password@localhost:5432/fraudshield
-PGUSER=username
-PGPASSWORD=password
-PGHOST=localhost
-PGPORT=5432
-PGDATABASE=fraudshield
+# Database connection
+DATABASE_URL=postgresql://username:password@hostname:port/database_name
 
-# Session Configuration
-SESSION_SECRET=your-secure-session-secret
+# Session management
+SESSION_SECRET=your_secure_random_string
 
-# Model Service URLs
+# Service endpoints
 MODEL_SERVICE_URL=http://localhost:8001
 STREAMLIT_URL=http://localhost:8501
 
-# Authentication
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-CALLBACK_URL=http://localhost:5000/auth/google/callback
+# Authentication (required for OAuth)
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 
-# General
-NODE_ENV=production
-PORT=5000
+# Optional settings
+NODE_ENV=production  # For production environments
+PORT=3000            # Web application port
 ```
 
-## Docker Deployment
+## Deployment Options
 
-### Prerequisites
-- Docker and Docker Compose installed
-- Git to clone the repository
+### Development Deployment
 
-### Steps
+For development environments, use the following steps:
 
-1. Clone the repository:
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-repo/fraud-shield.git
+   git clone https://github.com/your-org/fraud-shield.git
    cd fraud-shield
    ```
 
-2. Create and configure the `.env` file as described above.
-
-3. Build and start the containers:
+2. **Install dependencies**
    ```bash
-   docker-compose up -d
-   ```
-
-   This will start three containers:
-   - Web application (Express + React)
-   - PostgreSQL database
-   - Model service (Flask API)
-
-4. Verify the deployment:
-   ```bash
-   docker-compose ps
-   ```
-
-5. Access the application at `http://localhost:5000`
-
-## Standalone Deployment
-
-### Prerequisites
-- Node.js (v16+)
-- Python (v3.8+)
-- PostgreSQL database
-- PM2 or similar process manager
-
-### Backend and Frontend
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-repo/fraud-shield.git
-   cd fraud-shield
-   ```
-
-2. Install dependencies:
-   ```bash
+   # Install Node.js dependencies
    npm install
+   
+   # Install Python dependencies
+   pip install -r model_service/requirements.txt
    ```
 
-3. Create and configure the `.env` file.
+3. **Set up the database**
+   ```bash
+   # Initialize the database schema
+   npm run db:push
+   ```
 
-4. Build the frontend:
+4. **Start development servers**
+   ```bash
+   # Start all services in development mode
+   npm run dev
+   ```
+
+This will start:
+- The frontend development server
+- The backend API server
+- The Flask ML service
+- The Streamlit dashboard (optional)
+
+### Production Deployment
+
+For production environments, follow these steps:
+
+1. **Build the frontend**
    ```bash
    npm run build
    ```
 
-5. Start the application:
+2. **Start the production server**
    ```bash
-   # Using Node.js directly
+   # Start the server with Node.js
    npm run start
-
-   # Using PM2
-   pm2 start npm --name "fraud-shield" -- start
+   
+   # Or use PM2 for process management
+   pm2 start prod-start.sh --name fraud-shield
    ```
 
-### Model Service
-
-1. Navigate to the model service directory:
+3. **Start the model service**
    ```bash
+   # Navigate to the model service directory
    cd model_service
+   
+   # Start the Flask API
+   python flask_api.py
+   
+   # Optionally start the Streamlit dashboard
+   python -m streamlit run streamlit_app.py
    ```
 
-2. Install Python dependencies:
+4. **Set up a reverse proxy (recommended)**
+
+   Configure Nginx or Apache to serve the application with SSL:
+
+   **Nginx example configuration:**
+   ```nginx
+   server {
+       listen 80;
+       server_name yourdomainname.com;
+       return 301 https://$host$request_uri;
+   }
+
+   server {
+       listen 443 ssl;
+       server_name yourdomainname.com;
+
+       ssl_certificate /path/to/cert.pem;
+       ssl_certificate_key /path/to/key.pem;
+
+       # Frontend and backend API
+       location / {
+           proxy_pass http://localhost:3000;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+
+       # Model service API
+       location /model/ {
+           proxy_pass http://localhost:8001/;
+           proxy_http_version 1.1;
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+
+       # Streamlit dashboard (optional)
+       location /dashboard/ {
+           proxy_pass http://localhost:8501/;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+   }
+   ```
+
+### Docker Deployment
+
+For containerized deployments using Docker:
+
+1. **Build and start the containers**
    ```bash
-   pip install -r requirements.txt
+   # Build and start all services
+   docker-compose up -d
    ```
 
-3. Start the Flask API:
+2. **For manual builds (optional)**
    ```bash
-   # Using Python directly
-   python run.py
-
-   # Using PM2
-   pm2 start run.py --name "fraud-shield-model" --interpreter python
+   # Build the application container
+   docker build -t fraud-shield-app .
+   
+   # Build the model service container
+   docker build -t fraud-shield-model -f model_service/Dockerfile ./model_service
+   
+   # Run the containers
+   docker run -d -p 3000:3000 --env-file .env fraud-shield-app
+   docker run -d -p 8001:8001 fraud-shield-model
    ```
+
+The `docker-compose.yml` file configures the following services:
+- **app**: The main application (frontend and backend API)
+- **db**: PostgreSQL database
+- **model**: Machine learning service
+- **dashboard** (optional): Streamlit visualization dashboard
 
 ## Database Setup
 
-### PostgreSQL Setup
+### Initial Setup
 
-1. Create a PostgreSQL database:
+1. **Create a PostgreSQL database**
    ```bash
-   createdb fraudshield
+   createdb fraud_shield
    ```
 
-2. The application will automatically create the required tables on first run.
-
-3. For manual setup, run:
+2. **Run the database migrations**
    ```bash
    npm run db:push
    ```
 
+### Migration and Backup
+
+For ongoing database maintenance:
+
+1. **To update the database schema after changes**
+   ```bash
+   npm run db:push
+   ```
+
+2. **To backup the database**
+   ```bash
+   pg_dump -U username -d fraud_shield > backup_$(date +%Y%m%d).sql
+   ```
+
+3. **To restore from backup**
+   ```bash
+   psql -U username -d fraud_shield < backup_file.sql
+   ```
+
 ## Model Service Deployment
 
-The model service can be deployed in two ways:
+The fraud detection model service can be deployed in several ways:
 
-1. **As part of Docker Compose** (recommended for development and testing)
-2. **As a standalone service** (recommended for production)
+### Standalone Service
 
-### Standalone Model Service
-
-1. Set up a Python environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Start the Flask API:
-   ```bash
-   python run.py
-   ```
-
-4. Start the Streamlit dashboard (optional):
+1. **Start the Flask API server**
    ```bash
    cd model_service
-   streamlit run streamlit_app.py
+   python flask_api.py
    ```
 
-5. Update the `.env` file to point to the model service URL.
+### Using Docker
 
-## Testing the Deployment
-
-1. **API Health Check**:
+1. **Build and run the container**
    ```bash
-   curl http://localhost:5000/api/health
+   docker build -t fraud-shield-model -f model_service/Dockerfile ./model_service
+   docker run -d -p 8001:8001 fraud-shield-model
    ```
 
-2. **Model Service Check**:
+### Using Cloud Services
+
+The model service can be deployed to:
+
+- **AWS Lambda** with API Gateway
+- **Google Cloud Run** for serverless deployment
+- **Azure Functions** with HTTP triggers
+
+Example for Google Cloud Run:
+
+```bash
+# Build the container
+gcloud builds submit --tag gcr.io/your-project/fraud-model-api ./model_service
+
+# Deploy to Cloud Run
+gcloud run deploy fraud-model-api \
+  --image gcr.io/your-project/fraud-model-api \
+  --platform managed \
+  --allow-unauthenticated
+```
+
+## Security Considerations
+
+To ensure a secure deployment:
+
+1. **Use strong, unique passwords** for:
+   - Database access
+   - Session secret
+   - API keys
+
+2. **Enable HTTPS** for all services using Let's Encrypt or similar services
+
+3. **Set up proper firewalls** to restrict access:
+   - Only the main application should be accessible from the internet
+   - The model service should only accept connections from the main application
+   - The database should only accept connections from the application server
+
+4. **Regularly update dependencies** to patch security vulnerabilities:
    ```bash
-   curl -X POST -H "Content-Type: application/json" -d '{"amount": 100, "merchantCategory": "test", "cardEntryMethod": "online"}' http://localhost:8001/predict
+   npm audit fix
    ```
 
-3. **Web Interface**: Navigate to `http://localhost:5000` in your browser.
+5. **Implement rate limiting** to prevent abuse
 
 ## Monitoring and Maintenance
 
-### Monitoring
+For effective monitoring and maintenance:
 
-1. **Application Logs**:
-   - Docker: `docker-compose logs -f web`
-   - Standalone: Check PM2 logs or the application logs
+1. **Set up health checks** to monitor service availability
+   - The application provides `/api/health` endpoints
+   - The model service provides `/health` endpoint
 
-2. **Database Monitoring**:
-   - Use pgAdmin or a similar tool to monitor the PostgreSQL database
+2. **Configure logging** for both the application and model service
+   - Standard logs are written to stdout/stderr
+   - Consider using a logging service like Logstash, Datadog, or CloudWatch
 
-3. **Health Checks**:
-   - Set up periodic health checks against `/api/health` endpoint
+3. **Schedule backups** for the database and model files
 
-### Backup and Restore
-
-1. **Database Backup**:
-   ```bash
-   pg_dump -U username -d fraudshield > backup.sql
-   ```
-
-2. **Database Restore**:
-   ```bash
-   psql -U username -d fraudshield < backup.sql
-   ```
+4. **Set up alerts** for critical failures or anomalies
 
 ## Troubleshooting
 
-### Common Issues
+### Common Issues and Solutions
 
-1. **Database Connection Issues**:
+1. **Database Connection Issues**
    - Verify DATABASE_URL is correct
-   - Check PostgreSQL is running
-   - Ensure the database user has appropriate permissions
+   - Check that the PostgreSQL service is running
+   - Ensure network connectivity between the app and database
 
-2. **Model Service Connection Issues**:
-   - Verify MODEL_SERVICE_URL is correct
-   - Check the Flask API is running
-   - Check network connectivity between services
+2. **Model Service Not Responding**
+   - Verify the model service is running on the configured port
+   - Check the MODEL_SERVICE_URL in the environment variables
+   - Look for errors in the model service logs
 
-3. **Web Application Issues**:
-   - Check server logs for errors
-   - Verify environment variables are properly set
-   - Check browser console for frontend errors
+3. **Authentication Problems**
+   - Ensure SESSION_SECRET is properly set
+   - Verify Google OAuth credentials if using Google authentication
 
-### Getting Help
+4. **Model Accuracy Issues**
+   - The model can be retrained with updated data
+   - See MODEL_DOCUMENTATION.md for details on retraining
 
-If you encounter issues not covered in this guide, please:
-1. Check the error logs
-2. Review the README.md for additional information
-3. Contact the development team for support
-
----
-
-© 2025 Fraud Shield. All rights reserved.
+For additional help, check the logs or file an issue on the project repository.
