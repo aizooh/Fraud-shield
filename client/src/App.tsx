@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
+import HomePage from "@/pages/home-page";
 import Dashboard from "@/pages/Dashboard";
 import FraudDetection from "@/pages/fraud-detection";
 import TransactionHistory from "@/pages/transaction-history";
@@ -36,8 +37,9 @@ function PrivateRoute({ component: Component }: { component: React.ComponentType
 function Router() {
   return (
     <Switch>
+      <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
-      <Route path="/">
+      <Route path="/dashboard">
         {() => <PrivateRoute component={Dashboard} />}
       </Route>
       <Route path="/fraud-detection">
@@ -59,8 +61,8 @@ function AppLayout() {
   const { user } = useAuth();
   const [location] = useLocation();
 
-  // Don't show main layout on auth page
-  if (location === "/auth") {
+  // Don't show main layout on home or auth pages
+  if (location === "/" || location === "/auth") {
     return <Router />;
   }
 

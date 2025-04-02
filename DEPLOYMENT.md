@@ -1,176 +1,160 @@
-# Fraud Detection System Deployment Guide
+# Deployment Guide for Fraud Shield
 
-This document provides instructions for deploying the Fraud Detection System in various environments.
+This document provides instructions for deploying the Fraud Shield application in various environments.
 
 ## Table of Contents
 
-1. [Prerequisites](#prerequisites)
+1. [Deployment Options](#deployment-options)
 2. [Environment Configuration](#environment-configuration)
-3. [Deployment Options](#deployment-options)
-   - [Replit Deployment](#replit-deployment)
-   - [Docker Deployment](#docker-deployment)
-   - [Manual Deployment](#manual-deployment)
-4. [Database Setup](#database-setup)
-5. [Model Service Deployment](#model-service-deployment)
-6. [Monitoring and Maintenance](#monitoring-and-maintenance)
-7. [Troubleshooting](#troubleshooting)
-
-## Prerequisites
-
-- Node.js 20.x or later
-- Python 3.11 or later
-- PostgreSQL 15.x or later
-- Docker and Docker Compose (for containerized deployment)
-- Git
-
-## Environment Configuration
-
-The application requires several environment variables to be set. Copy `.env.example` to `.env` and update the values:
-
-```
-# Database
-DATABASE_URL=postgresql://username:password@localhost:5432/fraud_detection
-PGHOST=localhost
-PGPORT=5432
-PGUSER=postgres
-PGPASSWORD=password
-PGDATABASE=fraud_detection
-
-# Session
-SESSION_SECRET=your-secure-session-secret
-
-# Model Service
-MODEL_SERVICE_URL=http://localhost:8001
-
-# Authentication (Google OAuth)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-CALLBACK_URL=http://localhost:3000/auth/google/callback
-```
+3. [Docker Deployment](#docker-deployment)
+4. [Standalone Deployment](#standalone-deployment)
+5. [Database Setup](#database-setup)
+6. [Model Service Deployment](#model-service-deployment)
+7. [Testing the Deployment](#testing-the-deployment)
+8. [Monitoring and Maintenance](#monitoring-and-maintenance)
+9. [Troubleshooting](#troubleshooting)
 
 ## Deployment Options
 
-### Replit Deployment
+Fraud Shield can be deployed in several ways:
 
-1. **Setup on Replit**:
-   - Fork the repository on Replit
-   - Configure the environment secrets in the Replit UI
-   - Click the "Deploy" button in your Replit project
+1. **Docker Deployment**: Using Docker and Docker Compose for containerized deployment
+2. **Standalone Deployment**: Directly on a server or cloud VM
+3. **Cloud Platform Deployment**: Using services like AWS, GCP, or Azure
 
-2. **Post-Deployment**:
-   - Access your application at the provided `.replit.app` domain
-   - Run the database initialization script if needed
+## Environment Configuration
 
-### Docker Deployment
+Before deployment, configure the environment variables in `.env` file:
 
-1. **Build and Deploy with Docker Compose**:
+```
+# Database Configuration
+DATABASE_URL=postgresql://username:password@localhost:5432/fraudshield
+PGUSER=username
+PGPASSWORD=password
+PGHOST=localhost
+PGPORT=5432
+PGDATABASE=fraudshield
 
+# Session Configuration
+SESSION_SECRET=your-secure-session-secret
+
+# Model Service URLs
+MODEL_SERVICE_URL=http://localhost:8001
+STREAMLIT_URL=http://localhost:8501
+
+# Authentication
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+CALLBACK_URL=http://localhost:5000/auth/google/callback
+
+# General
+NODE_ENV=production
+PORT=5000
+```
+
+## Docker Deployment
+
+### Prerequisites
+- Docker and Docker Compose installed
+- Git to clone the repository
+
+### Steps
+
+1. Clone the repository:
    ```bash
-   # Clone the repository
-   git clone https://github.com/yourusername/fraud-detection-system.git
-   cd fraud-detection-system
+   git clone https://github.com/your-repo/fraud-shield.git
+   cd fraud-shield
+   ```
 
-   # Configure environment variables
-   cp .env.example .env
-   # Edit .env with your settings
+2. Create and configure the `.env` file as described above.
 
-   # Start the services
+3. Build and start the containers:
+   ```bash
    docker-compose up -d
    ```
 
-2. **Access Services**:
-   - Main application: http://localhost:3000
-   - Flask API: http://localhost:8001
-   - Streamlit dashboard: http://localhost:8501
+   This will start three containers:
+   - Web application (Express + React)
+   - PostgreSQL database
+   - Model service (Flask API)
 
-3. **Scaling with Docker Swarm or Kubernetes**:
-   
-   For production environments, consider using Docker Swarm or Kubernetes:
-
+4. Verify the deployment:
    ```bash
-   # Initialize a Docker Swarm
-   docker swarm init
-
-   # Deploy the stack
-   docker stack deploy -c docker-compose.yml fraud-detection
+   docker-compose ps
    ```
 
-### Manual Deployment
+5. Access the application at `http://localhost:5000`
 
-1. **Backend and Frontend Build**:
+## Standalone Deployment
 
+### Prerequisites
+- Node.js (v16+)
+- Python (v3.8+)
+- PostgreSQL database
+- PM2 or similar process manager
+
+### Backend and Frontend
+
+1. Clone the repository:
    ```bash
-   # Clone the repository
-   git clone https://github.com/yourusername/fraud-detection-system.git
-   cd fraud-detection-system
+   git clone https://github.com/your-repo/fraud-shield.git
+   cd fraud-shield
+   ```
 
-   # Install dependencies
+2. Install dependencies:
+   ```bash
    npm install
-
-   # Build the application
-   npm run build
-
-   # Start the application
-   ./prod-start.sh
    ```
 
-2. **Model Service Deployment**:
+3. Create and configure the `.env` file.
 
+4. Build the frontend:
+   ```bash
+   npm run build
+   ```
+
+5. Start the application:
+   ```bash
+   # Using Node.js directly
+   npm run start
+
+   # Using PM2
+   pm2 start npm --name "fraud-shield" -- start
+   ```
+
+### Model Service
+
+1. Navigate to the model service directory:
    ```bash
    cd model_service
-   
-   # Install Python dependencies
-   pip install -r requirements.txt
-   
-   # Start the Flask API
-   python run.py --api
-   
-   # Start the Streamlit dashboard (optional)
-   python run.py --streamlit
    ```
 
-3. **Running with Process Manager**:
-
-   For production environments, use a process manager like PM2:
-
+2. Install Python dependencies:
    ```bash
-   # Install PM2
-   npm install -g pm2
-   
-   # Start the main application with PM2
-   pm2 start ./prod-start.sh --name fraud-detection
-   
-   # Start the model service
-   pm2 start --name model-api -- python model_service/run.py --api
-   
-   # Setup startup configuration
-   pm2 startup
-   pm2 save
+   pip install -r requirements.txt
+   ```
+
+3. Start the Flask API:
+   ```bash
+   # Using Python directly
+   python run.py
+
+   # Using PM2
+   pm2 start run.py --name "fraud-shield-model" --interpreter python
    ```
 
 ## Database Setup
 
-1. **PostgreSQL Setup**:
+### PostgreSQL Setup
 
+1. Create a PostgreSQL database:
    ```bash
-   # Run the database setup script
-   ./db-setup.sh
+   createdb fraudshield
    ```
 
-   Or manually:
+2. The application will automatically create the required tables on first run.
 
-   ```bash
-   # Create the database
-   createdb fraud_detection
-   
-   # Run the migrations
-   npm run db:push
-   ```
-
-2. **Database Migrations**:
-
-   When updating the application:
-
+3. For manual setup, run:
    ```bash
    npm run db:push
    ```
@@ -179,54 +163,101 @@ CALLBACK_URL=http://localhost:3000/auth/google/callback
 
 The model service can be deployed in two ways:
 
-1. **As Part of Docker Compose**:
-   - The docker-compose.yml file includes configurations for the Flask API and Streamlit dashboard
+1. **As part of Docker Compose** (recommended for development and testing)
+2. **As a standalone service** (recommended for production)
 
-2. **Standalone Deployment**:
-   - Deploy the Flask API:
-     ```bash
-     cd model_service
-     python run.py --api
-     ```
-   - Deploy the Streamlit dashboard:
-     ```bash
-     cd model_service
-     python run.py --streamlit
-     ```
+### Standalone Model Service
+
+1. Set up a Python environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Start the Flask API:
+   ```bash
+   python run.py
+   ```
+
+4. Start the Streamlit dashboard (optional):
+   ```bash
+   cd model_service
+   streamlit run streamlit_app.py
+   ```
+
+5. Update the `.env` file to point to the model service URL.
+
+## Testing the Deployment
+
+1. **API Health Check**:
+   ```bash
+   curl http://localhost:5000/api/health
+   ```
+
+2. **Model Service Check**:
+   ```bash
+   curl -X POST -H "Content-Type: application/json" -d '{"amount": 100, "merchantCategory": "test", "cardEntryMethod": "online"}' http://localhost:8001/predict
+   ```
+
+3. **Web Interface**: Navigate to `http://localhost:5000` in your browser.
 
 ## Monitoring and Maintenance
 
-1. **Health Checks**:
-   - The application provides a health check endpoint at `/api/health`
-   - Use this endpoint in your monitoring system
+### Monitoring
 
-2. **Logs**:
-   - Application logs are available in the standard output or pm2 logs
-   - Monitor logs for errors and performance issues
+1. **Application Logs**:
+   - Docker: `docker-compose logs -f web`
+   - Standalone: Check PM2 logs or the application logs
 
-3. **Backup Procedures**:
-   - Regularly backup the PostgreSQL database:
-     ```bash
-     pg_dump -U postgres -d fraud_detection > backup_$(date +%Y%m%d).sql
-     ```
+2. **Database Monitoring**:
+   - Use pgAdmin or a similar tool to monitor the PostgreSQL database
+
+3. **Health Checks**:
+   - Set up periodic health checks against `/api/health` endpoint
+
+### Backup and Restore
+
+1. **Database Backup**:
+   ```bash
+   pg_dump -U username -d fraudshield > backup.sql
+   ```
+
+2. **Database Restore**:
+   ```bash
+   psql -U username -d fraudshield < backup.sql
+   ```
 
 ## Troubleshooting
 
+### Common Issues
+
 1. **Database Connection Issues**:
-   - Verify the PostgreSQL connection parameters
-   - Check if the PostgreSQL service is running
+   - Verify DATABASE_URL is correct
+   - Check PostgreSQL is running
+   - Ensure the database user has appropriate permissions
 
-2. **Model Service Issues**:
-   - Verify that the Flask API is running and accessible
-   - Check the MODEL_SERVICE_URL environment variable
+2. **Model Service Connection Issues**:
+   - Verify MODEL_SERVICE_URL is correct
+   - Check the Flask API is running
+   - Check network connectivity between services
 
-3. **Authentication Problems**:
-   - Verify the Google OAuth credentials
-   - Ensure the callback URL is correctly configured
+3. **Web Application Issues**:
+   - Check server logs for errors
+   - Verify environment variables are properly set
+   - Check browser console for frontend errors
 
-4. **Application Not Starting**:
-   - Check the application logs
-   - Verify all environment variables are set correctly
-   - Ensure all dependencies are installed
+### Getting Help
 
-For additional support, please open an issue in the repository or contact the development team.
+If you encounter issues not covered in this guide, please:
+1. Check the error logs
+2. Review the README.md for additional information
+3. Contact the development team for support
+
+---
+
+© 2025 Fraud Shield. All rights reserved.
