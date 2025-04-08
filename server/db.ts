@@ -9,5 +9,5 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-const client = postgres(process.env.DATABASE_URL);
-export const db = drizzle(client, { schema });
+export const pool = postgres(process.env.DATABASE_URL);
+export const db = drizzle(pool, { schema });
