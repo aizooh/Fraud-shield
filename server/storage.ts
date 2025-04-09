@@ -7,9 +7,7 @@ import { nanoid } from "nanoid";
 import { db, pool } from "./db";
 import { eq, desc, and, sql, count, avg } from "drizzle-orm";
 import session from "express-session";
-import pgSessionConnect from "connect-pg-simple";
-
-const PostgresSessionStore = pgSessionConnect(session);
+import memoryStoreModule from "memorystore";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -48,10 +46,10 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
   
   constructor() {
-    // Initialize session store
-    this.sessionStore = new PostgresSessionStore({
-      pool,
-      createTableIfMissing: true
+    // Initialize in-memory session store
+    const MemoryStore = memoryStoreModule(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
     });
     
     // Seed admin user if not exists
