@@ -5,8 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import Dashboard from "@/pages/Dashboard";
-import FraudDetection from "@/pages/fraud-detection";
+import FraudDashboard from "@/pages/fraud-dashboard";
 import TransactionHistory from "@/pages/transaction-history";
+import Analytics from "@/pages/analytics";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile";
 import MainLayout from "@/components/layout/main-layout";
@@ -42,11 +43,14 @@ function Router() {
       <Route path="/dashboard">
         {() => <PrivateRoute component={Dashboard} />}
       </Route>
-      <Route path="/fraud-detection">
-        {() => <PrivateRoute component={FraudDetection} />}
+      <Route path="/fraud-dashboard">
+        {() => <PrivateRoute component={FraudDashboard} />}
       </Route>
       <Route path="/transactions">
         {() => <PrivateRoute component={TransactionHistory} />}
+      </Route>
+      <Route path="/analytics">
+        {() => <PrivateRoute component={Analytics} />}
       </Route>
       <Route path="/profile">
         {() => <PrivateRoute component={ProfilePage} />}

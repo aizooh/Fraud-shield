@@ -42,9 +42,9 @@ export default function Sidebar() {
         </div>
         <div className="flex-1 flex flex-col overflow-y-auto">
           <nav className="flex-1 px-2 py-4 space-y-1">
-            <Link href="/">
+            <Link href="/dashboard">
               <div className={`flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ${
-                isActive("/") 
+                isActive("/dashboard") 
                   ? "text-white bg-gray-700" 
                   : "text-gray-300 hover:bg-gray-700 hover:text-white"
               }`}>
@@ -52,14 +52,14 @@ export default function Sidebar() {
                 Dashboard
               </div>
             </Link>
-            <Link href="/fraud-detection">
+            <Link href="/fraud-dashboard">
               <div className={`flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ${
-                isActive("/fraud-detection") 
+                isActive("/fraud-dashboard") 
                   ? "text-white bg-gray-700" 
                   : "text-gray-300 hover:bg-gray-700 hover:text-white"
               }`}>
-                <span className="material-icons mr-3 text-lg">search</span>
-                Fraud Detection
+                <span className="material-icons mr-3 text-lg">shield</span>
+                Fraud Dashboard
               </div>
             </Link>
             <Link href="/transactions">
@@ -72,10 +72,16 @@ export default function Sidebar() {
                 Transaction History
               </div>
             </Link>
-            <a className="flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
-              <span className="material-icons mr-3 text-lg">bar_chart</span>
-              Analytics
-            </a>
+            <Link href="/analytics">
+              <div className={`flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                isActive("/analytics") 
+                  ? "text-white bg-gray-700" 
+                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+              }`}>
+                <span className="material-icons mr-3 text-lg">bar_chart</span>
+                Analytics
+              </div>
+            </Link>
             <Link href="/profile">
               <div className={`flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ${
                 isActive("/profile") 
