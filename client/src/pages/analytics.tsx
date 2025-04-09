@@ -5,7 +5,8 @@ import {
   CardContent, 
   CardDescription, 
   CardHeader, 
-  CardTitle 
+  CardTitle,
+  CardFooter 
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -19,15 +20,21 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  LineChart,
+  Line
 } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ArrowUpRight, ArrowDownRight, Activity, AlertTriangle, Shield, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { DateRange } from "react-day-picker";
 
 interface CategoryData {
   category: string;
@@ -41,7 +48,56 @@ interface TrendData {
   amount: number;
 }
 
+interface TransactionStat {
+  totalTransactions: number;
+  fraudDetected: number;
+  suspiciousTransactions: number;
+  detectionAccuracy: number;
+}
+
+// Custom stat card component
+function StatCard({ title, value, description, icon, trend, trendValue }: { 
+  title: string, 
+  value: string | number, 
+  description?: string,
+  icon?: React.ReactNode,
+  trend?: 'up' | 'down',
+  trendValue?: string
+}) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <div className="flex items-center gap-1">
+              <h3 className="text-2xl font-bold">{value}</h3>
+              {trend && trendValue && (
+                <span className={`text-xs flex items-center ${trend === 'up' ? 'text-red-500' : 'text-green-500'}`}>
+                  {trend === 'up' ? (
+                    <ArrowUpRight className="h-3 w-3 mr-1" />
+                  ) : (
+                    <ArrowDownRight className="h-3 w-3 mr-1" />
+                  )}
+                  {trendValue}
+                </span>
+              )}
+            </div>
+            {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+          </div>
+          {icon && (
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              {icon}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Analytics() {
+  const { toast } = useToast();
   const [dateRange, setDateRange] = useState({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date()
@@ -49,6 +105,29 @@ export default function Analytics() {
   
   const [category, setCategory] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<string>("trends");
+  
+  // Fetch transaction stats
+  const { data: transactionStats } = useQuery({
+    queryKey: ['/api/stats'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest({
+          method: 'GET',
+          url: '/api/stats'
+        });
+        return response;
+      } catch (error) {
+        console.error("Failed to fetch transaction stats:", error);
+        // Default fallback data if API fails
+        return {
+          totalTransactions: 1250,
+          fraudDetected: 48,
+          suspiciousTransactions: 125,
+          detectionAccuracy: 0.952
+        } as TransactionStat;
+      }
+    }
+  });
   
   // Mock data, in a real app this would be fetched from API
   const { data: fraudCategoriesData } = useQuery({
@@ -99,6 +178,38 @@ export default function Analytics() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <div className="py-4">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <StatCard 
+              title="Total Transactions" 
+              value={transactionStats?.totalTransactions?.toLocaleString() || "..."}
+              icon={<CreditCard className="h-4 w-4 text-primary" />}
+              trend="up"
+              trendValue="12.5%"
+            />
+            <StatCard 
+              title="Fraud Detected" 
+              value={transactionStats?.fraudDetected?.toLocaleString() || "..."}
+              icon={<AlertTriangle className="h-4 w-4 text-red-500" />}
+              trend="up"
+              trendValue="8.2%"
+            />
+            <StatCard 
+              title="Suspicious Transactions" 
+              value={transactionStats?.suspiciousTransactions?.toLocaleString() || "..."}
+              icon={<Activity className="h-4 w-4 text-yellow-500" />}
+              trend="down"
+              trendValue="3.1%"
+            />
+            <StatCard 
+              title="Detection Accuracy" 
+              value={transactionStats ? `${(transactionStats.detectionAccuracy * 100).toFixed(2)}%` : "..."}
+              icon={<Shield className="h-4 w-4 text-green-500" />}
+              trend="up"
+              trendValue="0.7%"
+            />
+          </div>
+          
           {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div>

@@ -52,14 +52,14 @@ export default function Sidebar() {
                 Dashboard
               </div>
             </Link>
-            <Link href="/fraud-dashboard">
+            <Link href="/fraud-detection">
               <div className={`flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer ${
-                isActive("/fraud-dashboard") 
+                isActive("/fraud-detection") 
                   ? "text-white bg-gray-700" 
                   : "text-gray-300 hover:bg-gray-700 hover:text-white"
               }`}>
-                <span className="material-icons mr-3 text-lg">shield</span>
-                Fraud Dashboard
+                <span className="material-icons mr-3 text-lg">security</span>
+                Fraud Detection
               </div>
             </Link>
             <Link href="/transactions">

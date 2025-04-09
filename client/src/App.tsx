@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import Dashboard from "@/pages/Dashboard";
-import FraudDashboard from "@/pages/fraud-dashboard";
+import FraudDetection from "@/pages/fraud-detection-new";
 import TransactionHistory from "@/pages/transaction-history";
 import Analytics from "@/pages/analytics";
 import AuthPage from "@/pages/auth-page";
@@ -43,8 +43,8 @@ function Router() {
       <Route path="/dashboard">
         {() => <PrivateRoute component={Dashboard} />}
       </Route>
-      <Route path="/fraud-dashboard">
-        {() => <PrivateRoute component={FraudDashboard} />}
+      <Route path="/fraud-detection">
+        {() => <PrivateRoute component={FraudDetection} />}
       </Route>
       <Route path="/transactions">
         {() => <PrivateRoute component={TransactionHistory} />}
