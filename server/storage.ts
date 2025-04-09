@@ -52,8 +52,19 @@ export class DatabaseStorage implements IStorage {
       checkPeriod: 86400000 // prune expired entries every 24h
     });
     
-    // Seed admin user if not exists
-    this.seedAdminUser();
+    // Initialize the database with sample data
+    this.initializeDatabase();
+  }
+  
+  private async initializeDatabase() {
+    try {
+      // Seed admin user first
+      await this.seedAdminUser();
+      // Then seed transaction data
+      await this.seedTransactionData();
+    } catch (error) {
+      console.error("Error initializing database:", error);
+    }
   }
   
   private async seedAdminUser() {
@@ -70,6 +81,100 @@ export class DatabaseStorage implements IStorage {
         console.error("Error creating admin user:", error);
       }
     }
+  }
+  
+  private async seedTransactionData() {
+    // Check if we already have transactions
+    const existingTransactions = await this.getTransactions(1);
+    if (existingTransactions.length > 0) {
+      return; // Don't seed if we already have transactions
+    }
+    
+    console.log("Seeding transaction data...");
+    
+    // Create sample transactions with different risk levels and fraud status
+    const merchantCategories = [
+      "Retail", "Restaurant", "Travel", "Online Shopping", "Entertainment", 
+      "Grocery", "Electronics", "Automotive", "Healthcare", "Financial Services"
+    ];
+    
+    const cardEntryMethods = [
+      "Chip", "Swipe", "Manual Entry", "Online", "Contactless", "Mobile Wallet"
+    ];
+    
+    const locations = [
+      "New York, USA", "London, UK", "Tokyo, Japan", "Paris, France", 
+      "Sydney, Australia", "Toronto, Canada", "Berlin, Germany", "Mumbai, India"
+    ];
+    
+    // Generate 50 transactions
+    const totalTransactions = 50;
+    const fraudCount = 8; // ~16% fraud rate
+    const suspiciousCount = 12; // ~24% suspicious rate
+    
+    for (let i = 0; i < totalTransactions; i++) {
+      const isFraud = i < fraudCount;
+      const isSuspicious = !isFraud && i < (fraudCount + suspiciousCount);
+      
+      const merchantCategory = merchantCategories[Math.floor(Math.random() * merchantCategories.length)];
+      const cardEntryMethod = cardEntryMethods[Math.floor(Math.random() * cardEntryMethods.length)];
+      const location = locations[Math.floor(Math.random() * locations.length)];
+      
+      // Generate amount (higher amounts more likely to be fraudulent)
+      let amount;
+      if (isFraud) {
+        amount = Math.random() * 5000 + 1000; // $1000-$6000
+      } else if (isSuspicious) {
+        amount = Math.random() * 2000 + 500; // $500-$2500
+      } else {
+        amount = Math.random() * 500 + 20; // $20-$520
+      }
+      
+      // Create transaction with appropriate risk level and fraud status
+      const transactionId = `TX-${nanoid(8)}`;
+      const confidence = isFraud ? Math.random() * 0.3 + 0.7 : (isSuspicious ? Math.random() * 0.3 + 0.4 : Math.random() * 0.4);
+      const riskLevel = isFraud ? "high" : (isSuspicious ? "medium" : "low");
+      const status = isFraud ? "fraudulent" : (isSuspicious ? "suspicious" : "safe");
+      
+      // Create timestamp within the last 30 days
+      const daysAgo = Math.floor(Math.random() * 30);
+      const hoursAgo = Math.floor(Math.random() * 24);
+      const timestamp = new Date();
+      timestamp.setDate(timestamp.getDate() - daysAgo);
+      timestamp.setHours(timestamp.getHours() - hoursAgo);
+      
+      // Insert directly to avoid validation issues with our InsertTransaction schema
+      await db.insert(transactions).values({
+        transactionId,
+        amount,
+        merchantName: `${merchantCategory} Store ${Math.floor(Math.random() * 100) + 1}`,
+        merchantCategory,
+        location,
+        ipAddress: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+        cardEntryMethod,
+        timestamp,
+        isFraud,
+        confidence,
+        riskLevel: riskLevel as any,
+        status: status as any,
+        userId: 1, // Assign to admin user
+        notes: isFraud ? "Potential fraudulent transaction" : (isSuspicious ? "Requires manual review" : "")
+      });
+    }
+    
+    console.log(`Seeded ${totalTransactions} transactions successfully`);
+    
+    // Also create analytics data summary
+    await this.createAnalyticsData({
+      date: new Date(),
+      totalTransactions,
+      fraudulentTransactions: fraudCount,
+      suspiciousTransactions: suspiciousCount,
+      detectionAccuracy: 0.942, // 94.2% accuracy
+      averageTransactionAmount: 450.75
+    });
+    
+    console.log("Seeded analytics data successfully");
   }
 
   async getUser(id: number): Promise<User | undefined> {
