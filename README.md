@@ -1,192 +1,124 @@
-# Fraud Shield - Credit Card Fraud Detection System
+# Credit Card Fraud Detection System
 
-<div align="center">
-  <img src="./generated-icon.png" alt="Fraud Shield Logo" width="120" height="120">
-  <h1>Fraud Shield</h1>
-  <p>A comprehensive credit card fraud detection system</p>
-</div>
+![Fraud Detection System](attached_assets/image_1743574416003.png)
 
-## 🚀 Overview
+A sophisticated credit card fraud detection system that leverages machine learning to provide real-time transaction risk analysis and user-friendly security insights.
 
-Fraud Shield is a sophisticated, full-stack credit card fraud detection system designed to provide real-time transaction risk analysis and user-friendly security insights. Leveraging machine learning and data visualization, Fraud Shield helps organizations identify, analyze, and prevent fraudulent credit card transactions.
+## Overview
 
-## ✨ Key Features
+This system helps businesses and financial institutions detect potentially fraudulent credit card transactions in real-time. Using advanced machine learning algorithms, the platform analyzes transaction patterns and provides instant risk assessments with detailed visualizations and analytics.
 
-- **Real-time Fraud Detection**: Analyze transactions instantly with advanced ML algorithms
-- **User & Admin Dashboards**: Role-based access with specialized views
-- **Transaction Analysis**: Both single transaction testing and bulk CSV imports
-- **Visualized Insights**: Interactive charts and metrics on fraud patterns
-- **Authentication System**: Secure login with Google OAuth integration
-- **Responsive Design**: Mobile-friendly UI that works across devices
-- **Comprehensive Reporting**: Detailed analytics on transaction patterns
-- **User Management**: Profile editing and notification preferences
+## Features
 
-## 🏗️ Technical Architecture
+- **Real-time Fraud Detection**: Instantly analyze transactions for potential fraud
+- **Bulk CSV Analysis**: Process large transaction datasets via CSV upload
+- **Interactive Dashboard**: View fraud statistics, trends, and metrics
+- **Transaction History**: Review and manage all transactions
+- **User Authentication**: Secure access with local and Google authentication
+- **Responsive Design**: Mobile and desktop friendly interface
+- **Advanced Analytics**: Detailed visualization of fraud patterns and risk factors
 
-The application consists of three main components:
+## Technology Stack
 
-1. **Frontend**: React.js with TypeScript
-   - Modern UI with shadcn/ui components and TailwindCSS
-   - Interactive visualizations with Recharts
-   - Type-safe API interactions
-   - Responsive dashboard layout
+### Frontend
+- React.js with TypeScript
+- Redux for state management
+- TailwindCSS for styling
+- Chart.js and Recharts for visualizations
+- React Query for data fetching
 
-2. **Backend**: Node.js with Express
-   - RESTful API endpoints
-   - PostgreSQL database integration
-   - Session-based authentication
-   - CSV processing capabilities
-
-3. **Model Service**: Flask API
-   - Machine learning model serving
-   - Real-time prediction endpoints
-   - Data preprocessing pipeline
-
-## 📊 Fraud Detection Model
-
-The system uses a machine learning model trained on real credit card transaction data with the following characteristics:
-
-- **Model Type**: Random Forest Classifier
-- **Features Used**: Transaction amount, merchant category, card entry method, location patterns, and time-based features
-- **Performance**: 99.94% accuracy with 95.21% precision on fraud detection
-- **Risk Assessment**: Transactions categorized as low, medium, or high risk
-
-For more details, see [MODEL_DOCUMENTATION.md](./MODEL_DOCUMENTATION.md).
-
-## 🖥️ Screenshots
-
-### Main Dashboard
-![Dashboard](attached_assets/image_1743574416003.png)
-
-### Fraud Detection Interface
-- Single Transaction Analysis
-- Bulk Import Analysis
-
-## 🔧 Technical Requirements
-
-- Node.js 18.x or higher
-- Python 3.10 or higher
-- PostgreSQL 14.x or higher
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js and npm
-- Python and pip
+### Backend
+- Node.js with Express
 - PostgreSQL database
+- Drizzle ORM for database interactions
+- Passport.js for authentication
 
-### Installation
+### Machine Learning
+- Python Flask API
+- Scikit-learn for ML models
+- Pandas for data processing
+- Joblib for model serialization
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-org/fraud-shield.git
-   cd fraud-shield
-   ```
+## Core Components
 
-2. **Install dependencies**
-   ```bash
-   # Install Node.js dependencies
-   npm install
-   
-   # Install Python dependencies
-   pip install -r model_service/requirements.txt
-   ```
+### 1. Dashboard
 
-3. **Set up environment variables**
-   Create a `.env` file based on `.env.example`
-   ```
-   # Database
-   DATABASE_URL=postgresql://user:password@localhost:5432/fraud_shield
-   
-   # Session
-   SESSION_SECRET=your_secret_key
-   
-   # Services
-   MODEL_SERVICE_URL=http://localhost:8001
-   STREAMLIT_URL=http://localhost:8501
-   
-   # Authentication (for Google OAuth)
-   GOOGLE_CLIENT_ID=your_google_client_id
-   GOOGLE_CLIENT_SECRET=your_google_client_secret
-   ```
+![Dashboard](attached_assets/image_1744170911374.png)
 
-4. **Set up the database**
-   ```bash
-   # Run database migrations
-   npm run db:push
-   ```
+The dashboard provides a high-level overview of:
+- Total transactions processed
+- Fraud detected
+- Suspicious transactions
+- Detection accuracy
+- Fraud trends visualization
+- Fraud categories breakdown
+- Recent transactions table
 
-5. **Start the application**
-   ```bash
-   # Start all services
-   npm run dev
-   ```
+### 2. Fraud Detection
 
-For deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+![Fraud Detection](attached_assets/image_1744172582714.png)
 
-## 📘 API Documentation
+The fraud detection page offers:
+- CSV upload for bulk transaction analysis
+- Clear step-by-step instructions
+- Processing feedback and results
 
-The Fraud Shield system exposes several API endpoints for integration:
+### 3. Analytics
 
-- `/api/fraud/predict` - Predict fraud for a single transaction
-- `/api/analyze-csv` - Analyze multiple transactions via CSV upload
-- `/api/transactions` - Manage transaction records
-- `/api/stats` - Get fraud statistics and metrics
+The analytics page provides detailed insights:
+- Transaction statistics over time
+- Fraud distribution by category
+- High-risk merchant identification
+- Detection accuracy metrics
+- Customizable date range filtering
 
-For complete API documentation, see [API_DOCUMENTATION.md](./API_DOCUMENTATION.md).
+### 4. Transaction Management
 
-## 🧪 Testing
+The transaction management system allows:
+- Viewing all transactions
+- Filtering by status (fraudulent, suspicious, safe)
+- Detailed transaction information
+- Export capabilities
 
-Run the test suite with:
+## Installation and Setup
 
-```bash
-# Run backend tests
-npm test
+For detailed installation instructions, please see the [INSTALLATION.md](INSTALLATION.md) file, which includes:
 
-# Run frontend tests
-npm run test:frontend
+- Step-by-step setup process
+- Required dependencies and versions
+- Environment configuration
+- Database setup
+- Running the application
 
-# Test the fraud detection API
-node test-fraud-api.js
-```
+## API Documentation
 
-## 📁 Project Structure
+For API documentation, please refer to the [API_DOCUMENTATION.md](API_DOCUMENTATION.md) file.
 
-```
-fraud-shield/
-├── client/                # Frontend React application
-│   ├── src/
-│   │   ├── components/    # UI components
-│   │   ├── hooks/         # Custom React hooks
-│   │   ├── pages/         # Application pages
-│   │   ├── store/         # State management
-│   │   └── lib/           # Utilities and helpers
-├── server/                # Backend Express application
-│   ├── auth.ts            # Authentication logic
-│   ├── modelService.ts    # Model service integration
-│   ├── routes.ts          # API endpoints
-│   └── storage.ts         # Database operations
-├── model_service/         # Fraud detection ML service
-│   ├── flask_api.py       # API server
-│   ├── streamlit_app.py   # Data visualization dashboard
-│   └── credit_card_model.pkl # Pre-trained ML model
-├── shared/                # Shared code between frontend and backend
-│   └── schema.ts          # Database schema and type definitions
-└── data/                  # Example data and schemas
-```
+## Machine Learning Model
 
-## 🤝 Contributing
+The system uses a sophisticated machine learning model trained on credit card transaction data. For details about the model, its features, and performance metrics, see the [MODEL_DOCUMENTATION.md](MODEL_DOCUMENTATION.md) file.
 
-Contributions are welcome! Please see our [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+## Recent Updates
 
-## 📜 License
+- Removed individual transaction test form from Dashboard
+- Enhanced CSV upload for bulk transaction analysis
+- Consolidated fraud metrics and visualizations in Analytics page
+- Improved transaction statistics visualization
+- Simplified user interface for better user experience
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+## Getting Started
 
-## 🙏 Acknowledgements
+1. Clone the repository
+2. Follow the installation instructions in INSTALLATION.md
+3. Start the backend and frontend servers
+4. Access the application at http://localhost:3000
 
-- Credit card dataset from ULB: [Kaggle - Credit Card Fraud Detection](https://www.kaggle.com/mlg-ulb/creditcardfraud)
-- Icons from [Lucide React](https://lucide.dev)
-- UI components from [shadcn/ui](https://ui.shadcn.com/)
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Credit card fraud detection dataset from Kaggle
+- Open source community for various tools and libraries
+- Contributors and testers for their valuable feedback
