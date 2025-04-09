@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState, setStats } from "@/lib/store";
 import StatCard from "@/components/dashboard/StatCard";
 import ChartCard from "@/components/dashboard/ChartCard";
-import FraudDetectionForm from "@/components/dashboard/FraudDetectionForm";
 import TransactionsTable from "@/components/dashboard/TransactionsTable";
 import { ChartData } from "@/types";
 
@@ -132,11 +131,6 @@ export default function Dashboard() {
               chartType="pie"
               data={fraudCategoriesData}
             />
-          </div>
-          
-          {/* Fraud Detection Form */}
-          <div className="mt-8">
-            <FraudDetectionForm />
           </div>
           
           {/* Recent Transactions Table */}
