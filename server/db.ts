@@ -10,8 +10,8 @@ if (!process.env.DATABASE_URL) {
 const pool = postgres(process.env.DATABASE_URL, {  // Remove the ! since we already checked DATABASE_URL
   host: 'localhost',
   port: 5432,
-  username: 'frauduser',
-  password: 'your_password', // Replace with actual password
+  username: 'frauduser1',
+  password: 'home2030', // Replace with actual password
   database: 'fraudshield',
   ssl: false,
   connection: {
