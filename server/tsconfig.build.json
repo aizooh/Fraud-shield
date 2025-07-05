@@ -3,8 +3,17 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./",
-    "noEmit": false
+    "noEmit": false,
+    "module": "CommonJS",
+    "types": ["node"],             // Only include Node types for backend
+    "allowImportingTsExtensions": false
   },
   "include": ["./**/*"],
-  "exclude": ["../node_modules", "./dist", "**/*.test.ts"]
+  "exclude": [
+    "../node_modules",
+    "./dist",
+    "**/*.test.ts",
+    "../client",
+    "../shared"
+  ]
 }
