@@ -14,6 +14,8 @@
     "../shared/**/*"
   ],
   "exclude": [
+    "../client",
+    "../vite.config.ts",
     "../node_modules",
     "./dist",
     "**/*.test.ts"
