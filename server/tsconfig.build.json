@@ -5,14 +5,14 @@
     "rootDir": "./",
     "noEmit": false,
     "module": "CommonJS",
-    "types": ["node"]
+    "moduleResolution": "node",         // <--- override this!
+    "types": ["node"],
+    "allowImportingTsExtensions": false // <--- override this!
   },
   "include": ["./**/*"],
   "exclude": [
     "../node_modules",
     "./dist",
-    "**/*.test.ts",
-    "../client",
-    "../shared"
+    "**/*.test.ts"
   ]
 }
