@@ -1,31 +1,17 @@
 {
-  "buildCommand": "npm run build",
-  "installCommand": "npm install",
   "builds": [
     {
-      "src": "dist/public/**", 
+      "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist/public" 
-      }
-    },
-    {
-      "src": "dist/server/index.js", 
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["dist/server/**"] 
+        "distDir": "dist/public"
       }
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/dist/server/index.js" 
-    },
-    {
       "src": "/(.*)",
-      "dest": "/dist/public/index.html" 
+      "dest": "/index.html"
     }
-  ],
-  "outputDirectory": "dist" 
+  ]
 }
