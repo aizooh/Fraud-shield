@@ -5,8 +5,7 @@
     "rootDir": "./",
     "noEmit": false,
     "module": "CommonJS",
-    "types": ["node"],             // Only include Node types for backend
-    "allowImportingTsExtensions": false
+    "types": ["node"]
   },
   "include": ["./**/*"],
   "exclude": [
